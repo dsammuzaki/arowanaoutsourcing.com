@@ -53,7 +53,7 @@ export function TrendChart() {
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
         <XAxis dataKey="m" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} axisLine={false} tickLine={false} />
         <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => "Rp " + v + " jt"} />
+        <Tooltip contentStyle={tooltipStyle} formatter={(value) => `Rp ${value} jt`} />
         <Area type="monotone" dataKey="tagihan" stroke={GOLD} strokeWidth={2} fill="url(#gTagihan)" name="Tagihan" />
         <Area type="monotone" dataKey="gaji" stroke={TEAL} strokeWidth={2} fill="url(#gGaji)" name="Gaji" />
       </AreaChart>
