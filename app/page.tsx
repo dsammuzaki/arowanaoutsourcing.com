@@ -10,7 +10,7 @@ export default function LoginPage() {
           className="pointer-events-none absolute inset-0 opacity-30"
           style={{
             background:
-              "radial-gradient(600px circle at 20% 20%, #1d9ca3, transparent 55%), radial-gradient(500px circle at 80% 70%, #217c7c, transparent 55%)",
+              "radial-gradient(600px circle at 20% 20%, #1a7d9c, transparent 55%), radial-gradient(500px circle at 80% 70%, #c69a34, transparent 60%)",
           }}
         />
         <div className="relative flex items-center gap-3">
@@ -30,15 +30,15 @@ export default function LoginPage() {
           </p>
           <div className="mt-8 flex gap-6 text-sm">
             <div>
-              <p className="text-2xl font-bold text-teal-soft">4</p>
+              <p className="text-2xl font-bold text-gold-light">4</p>
               <p className="text-white/60">Klien aktif</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-teal-soft">99</p>
+              <p className="text-2xl font-bold text-gold-light">99</p>
               <p className="text-white/60">Tenaga kerja</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-teal-soft">2</p>
+              <p className="text-2xl font-bold text-gold-light">2</p>
               <p className="text-white/60">Badan usaha</p>
             </div>
           </div>

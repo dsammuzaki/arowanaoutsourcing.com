@@ -23,6 +23,7 @@ export function PageHeader({
 const toneMap: Record<string, string> = {
   green: "bg-emerald-50 text-emerald-700",
   teal: "bg-teal-soft/60 text-teal-deep",
+  gold: "bg-gold-soft/70 text-gold-dark",
   red: "bg-red-50 text-brand-red",
   amber: "bg-amber-50 text-amber-700",
   slate: "bg-slate-100 text-slate-600",

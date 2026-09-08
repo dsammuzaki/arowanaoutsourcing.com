@@ -49,11 +49,11 @@ const stats = [
 ];
 
 const attendanceBars = [
-  { label: "Hadir", value: attendanceSummary.hadir, color: "#1d9ca3" },
+  { label: "Hadir", value: attendanceSummary.hadir, color: "#1a7d9c" },
   { label: "Izin", value: attendanceSummary.izin, color: "#f59e0b" },
   { label: "Sakit", value: attendanceSummary.sakit, color: "#6366f1" },
   { label: "Cuti", value: attendanceSummary.cuti, color: "#94a3b8" },
-  { label: "Alpha", value: attendanceSummary.alpha, color: "#da1315" },
+  { label: "Alpha", value: attendanceSummary.alpha, color: "#c0392b" },
 ];
 const attTotal = attendanceBars.reduce((s, b) => s + b.value, 0);
 
