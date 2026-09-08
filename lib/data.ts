@@ -596,3 +596,109 @@ export const kinerjaStats = {
   goalSelesai: goals.filter((g) => g.progress === 100).length,
   reviewBerjalan: reviewCycles.filter((r) => r.status === "berjalan").length,
 };
+
+// =====================================================================
+// Dashboard widgets (mock) — layout kaya ala HRM
+// =====================================================================
+export const presentToday = 78;
+
+export const dashboardBirthdays = employees.slice(0, 6).map((e) => ({
+  name: e.name,
+  role: e.position,
+}));
+
+export const dashboardOnLeave = leaveApplications
+  .filter((l) => l.status === "disetujui")
+  .slice(0, 6)
+  .map((l) => {
+    const e = employeeById(l.employeeId)!;
+    return { name: e.name, role: e.position, type: l.type };
+  });
+
+export const weeklyAttendance = [
+  { day: "Sen", present: 74, leave: 3, absent: 2 },
+  { day: "Sel", present: 76, leave: 2, absent: 1 },
+  { day: "Rab", present: 71, leave: 4, absent: 3 },
+  { day: "Kam", present: 78, leave: 1, absent: 2 },
+  { day: "Jum", present: 75, leave: 3, absent: 1 },
+  { day: "Sab", present: 68, leave: 5, absent: 4 },
+  { day: "Min", present: 40, leave: 2, absent: 1 },
+];
+
+export const leaveOverviewData = [
+  { label: "Disetujui", value: leaveStats.disetujui + 6, color: "#1a7d9c" },
+  { label: "Pending", value: leaveStats.pending + 3, color: "#c69a34" },
+  { label: "Ditolak", value: leaveStats.ditolak + 1, color: "#c0392b" },
+];
+
+export const hiringTrend = [
+  { m: "Jan", hires: 6 },
+  { m: "Feb", hires: 9 },
+  { m: "Mar", hires: 12 },
+  { m: "Apr", hires: 7 },
+  { m: "Mei", hires: 14 },
+  { m: "Jun", hires: 10 },
+  { m: "Jul", hires: 16 },
+  { m: "Agu", hires: 13 },
+  { m: "Sep", hires: 8 },
+  { m: "Okt", hires: 11 },
+  { m: "Nov", hires: 15 },
+  { m: "Des", hires: 9 },
+];
+
+// net pay per bulan (dalam juta Rupiah)
+export const payrollTrendMonthly = [
+  { m: "Jan", net: 452 },
+  { m: "Feb", net: 461 },
+  { m: "Mar", net: 468 },
+  { m: "Apr", net: 471 },
+  { m: "Mei", net: 476 },
+  { m: "Jun", net: 480 },
+  { m: "Jul", net: 476 },
+  { m: "Agu", net: 492 },
+  { m: "Sep", net: 498 },
+  { m: "Okt", net: 505 },
+  { m: "Nov", net: 512 },
+  { m: "Des", net: 520 },
+];
+
+export const assetStatusData = [
+  { label: "Tersedia", value: 16, color: "#1a7d9c" },
+  { label: "Dipinjam", value: 32, color: "#c69a34" },
+  { label: "Maintenance", value: 5, color: "#e6c46e" },
+  { label: "Rusak", value: 3, color: "#c0392b" },
+];
+
+export const candidatePipelineData = candidateStages.map((stage, i) => ({
+  label: stage,
+  value: candidates.filter((c) => c.stage === stage).length,
+  color: ["#94a3b8", "#c69a34", "#1a7d9c", "#e6c46e", "#2e9e6b"][i],
+}));
+
+export const dashboardAnnouncements = [
+  { title: "Penyesuaian tarif BPJS Ketenagakerjaan 2026", category: "Kebijakan", date: "2026-08-28", urgent: true },
+  { title: "Jadwal payroll & pencairan Agustus 2026", category: "Keuangan", date: "2026-08-25", urgent: true },
+  { title: "SOP baru penempatan Security klien DPM", category: "Operasional", date: "2026-08-20", urgent: false },
+  { title: "Program pelatihan K3 tenaga kerja baru", category: "SDM", date: "2026-08-15", urgent: false },
+  { title: "Libur nasional & cuti bersama kuartal IV", category: "Umum", date: "2026-08-10", urgent: false },
+];
+
+export const dashboardMeetings = [
+  { title: "Review kontrak PT Armas Logistic", date: "2026-09-09", time: "09:00 – 10:00", status: "berjalan" as const },
+  { title: "Evaluasi Security klien DPM", date: "2026-09-10", time: "13:00 – 14:00", status: "berjalan" as const },
+  { title: "Rapat payroll bulanan", date: "2026-09-11", time: "10:00 – 11:30", status: "selesai" as const },
+  { title: "Interview kandidat Cleaning MKW", date: "2026-09-12", time: "14:30 – 15:30", status: "berjalan" as const },
+];
+
+export const dashboardKpis = {
+  totalPayrollThisMonth: clientComparison.reduce((s, c) => s + c.payrollNow, 0),
+  payrollRuns: 3,
+  totalEmployees: employees.filter((e) => e.status === "aktif").length,
+  newThisMonth: 8,
+  totalClients: clients.length,
+  attendanceRate: 94.2,
+  pendingLeaves: leaveStats.pending,
+  onLeaveToday: dashboardOnLeave.length,
+  activeJobs: jobPostings.filter((j) => j.status === "dibuka").length,
+  jobsThisMonth: 5,
+};
