@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -18,6 +19,13 @@ import {
 
 const TEAL = "#1a7d9c";
 const GOLD = "#c69a34";
+
+// Charts render client-only to avoid SSR hydration mismatch (React #418).
+function useMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
 
 const tooltipStyle = {
   background: "hsl(var(--card))",
@@ -38,6 +46,8 @@ const trend = [
 ];
 
 export function TrendChart() {
+  const mounted = useMounted();
+  if (!mounted) return <div style={{ height: 260 }} />;
   return (
     <ResponsiveContainer width="100%" height={260}>
       <AreaChart data={trend} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
@@ -67,6 +77,8 @@ export function AttendanceDonut({
 }: {
   data: { label: string; value: number; color: string }[];
 }) {
+  const mounted = useMounted();
+  if (!mounted) return <div style={{ height: 180 }} />;
   return (
     <ResponsiveContainer width="100%" height={180}>
       <PieChart>
@@ -94,6 +106,8 @@ export function MiniBar({
 }: {
   data: { label: string; value: number }[];
 }) {
+  const mounted = useMounted();
+  if (!mounted) return <div style={{ height: 200 }} />;
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={data} margin={{ top: 6, right: 8, left: -14, bottom: 0 }}>
@@ -113,6 +127,8 @@ export function WeeklyBars({
 }: {
   data: { day: string; present: number; leave: number; absent: number }[];
 }) {
+  const mounted = useMounted();
+  if (!mounted) return <div style={{ height: 240 }} />;
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} margin={{ top: 6, right: 8, left: -16, bottom: 0 }} barGap={2}>
@@ -134,6 +150,8 @@ export function HiringBars({
 }: {
   data: { m: string; hires: number }[];
 }) {
+  const mounted = useMounted();
+  if (!mounted) return <div style={{ height: 280 }} />;
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data} margin={{ top: 20, right: 8, left: -16, bottom: 0 }}>
@@ -155,6 +173,8 @@ export function PayrollArea({
 }: {
   data: { m: string; net: number }[];
 }) {
+  const mounted = useMounted();
+  if (!mounted) return <div style={{ height: 240 }} />;
   return (
     <ResponsiveContainer width="100%" height={240}>
       <AreaChart data={data} margin={{ top: 10, right: 8, left: -6, bottom: 0 }}>

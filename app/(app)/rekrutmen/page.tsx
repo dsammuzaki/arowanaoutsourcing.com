@@ -10,6 +10,7 @@ import {
   clientById,
   contractTypeLabel,
 } from "@/lib/data";
+import { tglParts } from "@/lib/format";
 
 const stageTone: Record<string, string> = {
   Pelamar: "slate",
@@ -142,10 +143,10 @@ export default function RekrutmenPage() {
                 <div key={iv.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
                   <div className="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <span className="text-[10px] font-semibold uppercase">
-                      {new Date(iv.date).toLocaleDateString("id-ID", { month: "short" })}
+                      {tglParts(iv.date).mon}
                     </span>
                     <span className="text-sm font-bold leading-none">
-                      {new Date(iv.date).getDate()}
+                      {tglParts(iv.date).d}
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">

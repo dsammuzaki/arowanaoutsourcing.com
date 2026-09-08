@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Logo } from "./logo";
 import {
@@ -119,15 +119,16 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const dark = resolvedTheme === "dark";
   return (
     <button
       onClick={() => setTheme(dark ? "light" : "dark")}
       className="rounded-lg p-2 text-muted-foreground hover:bg-muted"
       aria-label="Ganti tema"
-      suppressHydrationWarning
     >
-      {dark ? <Sun size={20} /> : <Moon size={20} />}
+      {mounted ? dark ? <Sun size={20} /> : <Moon size={20} /> : <span className="block h-5 w-5" />}
     </button>
   );
 }
@@ -178,11 +179,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <div className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 hover:bg-muted">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
-                MR
+                AH
               </div>
               <div className="hidden text-left leading-tight sm:block">
-                <p className="text-sm font-semibold text-foreground">Mariyanti</p>
-                <p className="text-[11px] text-muted-foreground">HR &amp; GA Manager</p>
+                <p className="text-sm font-semibold text-foreground">Agus Hidayatulloh</p>
+                <p className="text-[11px] text-muted-foreground">Manager Operation</p>
               </div>
             </div>
           </div>

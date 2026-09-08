@@ -66,7 +66,7 @@ export default function LoginPage() {
           <form className="mt-8 space-y-4">
             <div>
               <label className="label">Email</label>
-              <input className="input" type="email" placeholder="nama@arowanabintang.co.id" defaultValue="mariyanti@arowanabintang.co.id" />
+              <input className="input" type="email" placeholder="nama@arowanabintang.co.id" defaultValue="agus.hidayatulloh@gmail.com" />
             </div>
             <div>
               <label className="label">Kata Sandi</label>

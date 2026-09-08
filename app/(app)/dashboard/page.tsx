@@ -219,7 +219,7 @@ export default function DashboardPage() {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-white/60">Selamat datang kembali,</p>
-            <h2 className="mt-0.5 text-2xl font-bold">Mariyanti 👋</h2>
+            <h2 className="mt-0.5 text-2xl font-bold">Agus Hidayatulloh 👋</h2>
             <p className="mt-1 text-sm text-white/60">
               Berikut ringkasan operasional PT. Arowana Bintang Perdana hari ini.
             </p>
