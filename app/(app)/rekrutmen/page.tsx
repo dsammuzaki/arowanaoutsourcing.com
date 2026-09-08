@@ -53,14 +53,20 @@ export default function RekrutmenPage() {
         ))}
       </div>
 
-      {/* Candidate pipeline */}
+      {/* Candidate pipeline — horizontal-scroll kanban on small screens, grid on wide */}
       <Card className="mb-6 p-5">
-        <h2 className="mb-4 font-bold text-foreground">Pipeline Kandidat</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-bold text-foreground">Pipeline Kandidat</h2>
+          <span className="text-xs text-muted-foreground xl:hidden">Geser →</span>
+        </div>
+        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 xl:mx-0 xl:grid xl:grid-cols-5 xl:overflow-visible xl:px-0 xl:pb-0">
           {candidateStages.map((stage) => {
             const list = candidates.filter((c) => c.stage === stage);
             return (
-              <div key={stage} className="rounded-lg bg-muted/60 p-3">
+              <div
+                key={stage}
+                className="w-[78%] shrink-0 snap-start rounded-lg bg-muted/60 p-3 sm:w-[300px] xl:w-auto xl:shrink"
+              >
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-semibold text-foreground">{stage}</span>
                   <Badge tone={stageTone[stage]}>{list.length}</Badge>
