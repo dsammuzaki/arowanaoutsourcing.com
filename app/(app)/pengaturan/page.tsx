@@ -16,7 +16,7 @@ export default function PengaturanPage() {
         }
       />
 
-      <div className="mb-4 rounded-lg border border-teal/30 bg-teal-soft/30 px-4 py-3 text-sm text-teal-deep">
+      <div className="mb-4 rounded-lg border border-teal/30 bg-teal-soft/30 px-4 py-3 text-sm text-primary">
         Perubahan rate berlaku untuk perhitungan payroll periode berikutnya. Riwayat rate
         lama tetap tersimpan (berdasarkan tanggal berlaku).
       </div>
@@ -24,9 +24,9 @@ export default function PengaturanPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* PTKP */}
         <Card className="overflow-hidden">
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="font-bold text-navy">Tabel PTKP (setahun)</h2>
-            <p className="text-xs text-slate-500">Penghasilan Tidak Kena Pajak per status</p>
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="font-bold text-foreground">Tabel PTKP (setahun)</h2>
+            <p className="text-xs text-muted-foreground">Penghasilan Tidak Kena Pajak per status</p>
           </div>
           <div className="grid grid-cols-2 gap-3 p-5">
             {Object.entries(ptkpTable).map(([key, val]) => (
@@ -40,14 +40,14 @@ export default function PengaturanPage() {
 
         {/* PPh 21 brackets */}
         <Card className="overflow-hidden">
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="font-bold text-navy">Tarif PPh 21 Progresif</h2>
-            <p className="text-xs text-slate-500">Lapisan penghasilan kena pajak</p>
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="font-bold text-foreground">Tarif PPh 21 Progresif</h2>
+            <p className="text-xs text-muted-foreground">Lapisan penghasilan kena pajak</p>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {pph21Brackets.map((b, i) => (
               <div key={i} className="flex items-center justify-between gap-3 px-5 py-3">
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-muted-foreground">
                   {i === 0
                     ? "s/d "
                     : rupiah(pph21Brackets[i - 1].upTo, { compact: true }) + " – "}
@@ -55,7 +55,7 @@ export default function PengaturanPage() {
                 </span>
                 <div className="flex items-center gap-1">
                   <input className="input w-20 text-right" defaultValue={b.rate} />
-                  <span className="text-sm text-slate-500">%</span>
+                  <span className="text-sm text-muted-foreground">%</span>
                 </div>
               </div>
             ))}
@@ -64,9 +64,9 @@ export default function PengaturanPage() {
 
         {/* BPJS employee */}
         <Card className="overflow-hidden">
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="font-bold text-navy">BPJS — Potongan Karyawan</h2>
-            <p className="text-xs text-slate-500">Dipotong dari gaji karyawan</p>
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="font-bold text-foreground">BPJS — Potongan Karyawan</h2>
+            <p className="text-xs text-muted-foreground">Dipotong dari gaji karyawan</p>
           </div>
           <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-3">
             {[
@@ -80,16 +80,16 @@ export default function PengaturanPage() {
               </div>
             ))}
           </div>
-          <p className="px-5 pb-4 text-xs text-slate-400">
+          <p className="px-5 pb-4 text-xs text-muted-foreground">
             Biaya Jabatan: {bpjsRates.biayaJabatanPct}% (maks Rp 500.000/bln) — pengurang PPh 21.
           </p>
         </Card>
 
         {/* BPJS client */}
         <Card className="overflow-hidden">
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="font-bold text-navy">BPJS — Bagian Tagihan Klien</h2>
-            <p className="text-xs text-slate-500">Dibebankan ke invoice klien</p>
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="font-bold text-foreground">BPJS — Bagian Tagihan Klien</h2>
+            <p className="text-xs text-muted-foreground">Dibebankan ke invoice klien</p>
           </div>
           <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3">
             {[
@@ -110,13 +110,13 @@ export default function PengaturanPage() {
 
       {/* Legal entities */}
       <Card className="mt-6 overflow-hidden">
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="font-bold text-navy">Badan Usaha (Multi-Entitas)</h2>
-          <p className="text-xs text-slate-500">Badan usaha penagih dalam grup usaha</p>
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="font-bold text-foreground">Badan Usaha (Multi-Entitas)</h2>
+          <p className="text-xs text-muted-foreground">Badan usaha penagih dalam grup usaha</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-muted">
               <tr>
                 <th className="th">Nama Badan Usaha</th>
                 <th className="th">NPWP</th>
@@ -124,11 +124,11 @@ export default function PengaturanPage() {
                 <th className="th">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {legalEntities.map((e) => (
-                <tr key={e.id} className="hover:bg-slate-50">
+                <tr key={e.id} className="hover:bg-muted">
                   <td className="td font-semibold">{e.name}</td>
-                  <td className="td text-slate-500">{e.npwp}</td>
+                  <td className="td text-muted-foreground">{e.npwp}</td>
                   <td className="td">
                     <Badge tone="teal">{e.invoicePrefix}</Badge>
                   </td>

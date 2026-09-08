@@ -415,3 +415,184 @@ export function clientById(id: string) {
 export function employeeById(id: string) {
   return employees.find((e) => e.id === id);
 }
+
+// =====================================================================
+// Modul SDM tambahan — Rekrutmen, Cuti, Kinerja (mock)
+// =====================================================================
+
+// ---------- Rekrutmen & Onboarding ----------
+export type JobStatus = "dibuka" | "ditutup" | "draft";
+export interface JobPosting {
+  id: string;
+  title: string;
+  clientId: string;
+  type: ContractType;
+  location: string;
+  applicants: number;
+  target: number;
+  status: JobStatus;
+  posted: string;
+}
+
+export const jobPostings: JobPosting[] = [
+  { id: "job-1", title: "Security / Anggota", clientId: "dpm", type: "security", location: "Bekasi", applicants: 24, target: 6, status: "dibuka", posted: "2026-08-01" },
+  { id: "job-2", title: "Office Boy", clientId: "als", type: "staff", location: "Cikarang", applicants: 18, target: 4, status: "dibuka", posted: "2026-08-05" },
+  { id: "job-3", title: "Cleaning Service", clientId: "mkw", type: "cleaning", location: "Jakarta Timur", applicants: 31, target: 8, status: "dibuka", posted: "2026-08-08" },
+  { id: "job-4", title: "Driver Sedang", clientId: "snt", type: "driver", location: "Karawang", applicants: 12, target: 3, status: "ditutup", posted: "2026-07-20" },
+  { id: "job-5", title: "Staff CCR", clientId: "als", type: "staff", location: "Cikarang", applicants: 9, target: 2, status: "draft", posted: "2026-08-18" },
+];
+
+export type CandidateStage = "Pelamar" | "Skrining" | "Interview" | "Penawaran" | "Diterima";
+export const candidateStages: CandidateStage[] = ["Pelamar", "Skrining", "Interview", "Penawaran", "Diterima"];
+
+export interface Candidate {
+  id: string;
+  name: string;
+  position: string;
+  clientId: string;
+  stage: CandidateStage;
+  source: string;
+  appliedAt: string;
+  score: number;
+}
+
+const candNames = ["Fajar Nugraha", "Sinta Dewi", "Bayu Aji", "Ratna Sari", "Doni Saputra", "Mega Lestari", "Irfan Maulana", "Putri Anggraini", "Yoga Prasetyo", "Nadia Rahma", "Reza Fahlevi", "Ayu Wulandari", "Galih Pratama", "Citra Kirana"];
+const candSources = ["Referral", "Job Portal", "Walk-in", "Sosial Media", "Agen"];
+
+export const candidates: Candidate[] = candNames.map((name, i) => {
+  const job = jobPostings[i % jobPostings.length];
+  return {
+    id: `cand-${i + 1}`,
+    name,
+    position: job.title,
+    clientId: job.clientId,
+    stage: candidateStages[i % candidateStages.length],
+    source: candSources[i % candSources.length],
+    appliedAt: `2026-08-${String((i % 27) + 1).padStart(2, "0")}`,
+    score: 60 + ((i * 7) % 40),
+  };
+});
+
+export const interviews = candidates
+  .filter((c) => c.stage === "Interview" || c.stage === "Penawaran")
+  .slice(0, 5)
+  .map((c, i) => ({
+    id: `int-${i + 1}`,
+    candidate: c.name,
+    position: c.position,
+    date: `2026-09-${String(9 + i).padStart(2, "0")}`,
+    time: ["09:00", "10:30", "13:00", "14:30", "15:30"][i],
+    type: i % 2 === 0 ? "Tatap Muka" : "Online",
+    interviewer: ["Mariyanti", "Tri Antoro", "Deo Galuh"][i % 3],
+  }));
+
+export const onboardingChecklist = [
+  { item: "Tanda tangan kontrak kerja", done: true },
+  { item: "Kelengkapan dokumen (KTP, NPWP, ijazah)", done: true },
+  { item: "Pendaftaran BPJS TK & Kesehatan", done: true },
+  { item: "Pembuatan rekening payroll", done: false },
+  { item: "Serah terima seragam & perlengkapan", done: false },
+  { item: "Briefing SOP & orientasi penempatan", done: false },
+];
+
+export const recruitmentStats = {
+  lowonganAktif: jobPostings.filter((j) => j.status === "dibuka").length,
+  totalPelamar: candidates.length,
+  interviewTerjadwal: interviews.length,
+  diterima: candidates.filter((c) => c.stage === "Diterima").length,
+};
+
+// ---------- Manajemen Cuti ----------
+export type LeaveType = "Tahunan" | "Sakit" | "Melahirkan" | "Izin" | "Penting";
+export type LeaveStatus = "pending" | "disetujui" | "ditolak";
+export interface LeaveApplication {
+  id: string;
+  employeeId: string;
+  type: LeaveType;
+  start: string;
+  end: string;
+  days: number;
+  status: LeaveStatus;
+  reason: string;
+}
+
+const leaveTypes: LeaveType[] = ["Tahunan", "Sakit", "Izin", "Penting", "Melahirkan"];
+const leaveReasons = ["Keperluan keluarga", "Sakit demam", "Acara pernikahan", "Urusan pribadi", "Kontrol kesehatan", "Melahirkan"];
+
+export const leaveApplications: LeaveApplication[] = employees.slice(0, 10).map((e, i) => {
+  const days = (i % 3) + 1;
+  const startDay = 3 + i * 2;
+  return {
+    id: `leave-${i + 1}`,
+    employeeId: e.id,
+    type: leaveTypes[i % leaveTypes.length],
+    start: `2026-09-${String(startDay).padStart(2, "0")}`,
+    end: `2026-09-${String(startDay + days - 1).padStart(2, "0")}`,
+    days,
+    status: (["pending", "disetujui", "ditolak", "disetujui"] as LeaveStatus[])[i % 4],
+    reason: leaveReasons[i % leaveReasons.length],
+  };
+});
+
+export const leaveBalances = employees.slice(0, 8).map((e, i) => {
+  const used = i % 8;
+  return { employee: e, quota: 12, used, remaining: 12 - used };
+});
+
+export const leaveStats = {
+  pending: leaveApplications.filter((l) => l.status === "pending").length,
+  disetujui: leaveApplications.filter((l) => l.status === "disetujui").length,
+  ditolak: leaveApplications.filter((l) => l.status === "ditolak").length,
+  totalHari: leaveApplications.reduce((s, l) => s + l.days, 0),
+};
+
+// ---------- Kinerja & KPI ----------
+export interface Goal {
+  id: string;
+  employeeId: string;
+  title: string;
+  progress: number;
+  due: string;
+}
+
+export const goals: Goal[] = employees.slice(0, 6).map((e, i) => ({
+  id: `goal-${i + 1}`,
+  employeeId: e.id,
+  title: [
+    "Tingkatkan kehadiran tim ke 98%",
+    "Nihil komplain klien selama Q3",
+    "Selesaikan sertifikasi K3",
+    "Efisiensi rute pengiriman 10%",
+    "Zero accident di lokasi kerja",
+    "Peningkatan skor kepuasan klien",
+  ][i],
+  progress: [85, 92, 60, 45, 100, 73][i],
+  due: `2026-${String(9 + (i % 3)).padStart(2, "0")}-30`,
+}));
+
+export const reviewCycles = [
+  { name: "Evaluasi Q3 2026", period: "Jul–Sep 2026", status: "berjalan", progress: 62 },
+  { name: "Evaluasi Q2 2026", period: "Apr–Jun 2026", status: "selesai", progress: 100 },
+  { name: "Review Tahunan 2026", period: "Jan–Des 2026", status: "berjalan", progress: 40 },
+];
+
+export const kpiIndicators = [
+  { name: "Kehadiran & Disiplin", category: "Operasional", weight: 25, score: 88 },
+  { name: "Kualitas Kerja", category: "Operasional", weight: 25, score: 82 },
+  { name: "Kepuasan Klien", category: "Layanan", weight: 20, score: 90 },
+  { name: "Kepatuhan SOP & K3", category: "Kepatuhan", weight: 20, score: 78 },
+  { name: "Inisiatif & Sikap", category: "Perilaku", weight: 10, score: 85 },
+];
+
+export const awards = employees.slice(0, 4).map((e, i) => ({
+  employee: e,
+  award: ["Karyawan Terbaik", "Kehadiran Sempurna", "Pelayanan Prima", "Zero Accident"][i],
+  month: "Agustus 2026",
+}));
+
+export const kinerjaStats = {
+  skorRata: Math.round(kpiIndicators.reduce((s, k) => s + (k.score * k.weight) / 100, 0)),
+  goalAktif: goals.filter((g) => g.progress < 100).length,
+  goalSelesai: goals.filter((g) => g.progress === 100).length,
+  reviewBerjalan: reviewCycles.filter((r) => r.status === "berjalan").length,
+};

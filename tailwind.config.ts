@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,8 +10,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // PT Arowana Bintang Perdana — teal + gold (from the logo)
-        // deep teal-ink used for the dark sidebar / hero surfaces
+        // semantic tokens (shadcn-style) — drive light/dark
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        sidebar: "hsl(var(--sidebar))",
+
+        // PT Arowana Bintang Perdana — fixed brand palette (from logo)
         navy: {
           DEFAULT: "#0a2029",
           800: "#0f2c38",
@@ -18,19 +42,18 @@ const config: Config = {
           600: "#1c4b5d",
         },
         teal: {
-          DEFAULT: "#1a7d9c", // logo petrol-blue
+          DEFAULT: "#1a7d9c",
           dark: "#146078",
           deep: "#0e4658",
           soft: "#d3e9f0",
         },
         gold: {
-          DEFAULT: "#c69a34", // logo gold
+          DEFAULT: "#c69a34",
           light: "#e6c46e",
           dark: "#a9772a",
           soft: "#f4e8cb",
         },
         brand: {
-          // kept for semantic "danger/negative" (deductions, overdue, down)
           red: "#c0392b",
           reddark: "#a5341f",
         },

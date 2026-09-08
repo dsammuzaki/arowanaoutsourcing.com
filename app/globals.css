@@ -2,62 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Design tokens — shadcn-style, ABP teal + gold, light & dark
+   ============================================================ */
 :root {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --background: 200 20% 97%;
+  --foreground: 197 61% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 197 61% 10%;
+  --muted: 200 24% 96%;
+  --muted-foreground: 215 16% 42%;
+  --border: 214 24% 90%;
+  --input: 214 24% 88%;
+  --ring: 193 72% 36%;
+
+  --primary: 193 72% 36%; /* teal #1a7d9c */
+  --primary-foreground: 0 0% 100%;
+  --accent: 42 58% 49%; /* gold #c69a34 */
+  --accent-foreground: 197 61% 10%;
+
+  /* fixed brand surfaces (same in both themes) */
+  --sidebar: 197 61% 10%;
+  --radius: 0.75rem;
+}
+
+:root.dark {
+  --background: 198 44% 7%;
+  --foreground: 200 30% 92%;
+  --card: 197 42% 10%;
+  --card-foreground: 200 30% 92%;
+  --muted: 197 34% 14%;
+  --muted-foreground: 200 16% 62%;
+  --border: 197 30% 18%;
+  --input: 197 30% 20%;
+  --ring: 193 65% 52%;
+
+  --primary: 193 66% 50%;
+  --primary-foreground: 197 61% 8%;
+  --accent: 42 62% 56%;
+  --accent-foreground: 197 61% 8%;
+
+  --sidebar: 198 52% 6%;
 }
 
 html {
   -webkit-font-smoothing: antialiased;
 }
-
 body {
-  background: #f4f6f8;
-  color: #0a2029;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
-/* Thin, brand-tinted scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5db transparent;
+  scrollbar-color: hsl(var(--border)) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #cbd5db;
+  background: hsl(var(--border));
   border-radius: 8px;
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-card;
+    @apply rounded-xl border border-border bg-card shadow-card;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/40 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-teal text-white hover:bg-teal-dark;
+    @apply btn bg-primary text-primary-foreground hover:opacity-90;
   }
   .btn-outline {
-    @apply btn border border-slate-300 bg-white text-navy hover:bg-slate-50;
+    @apply btn border border-border bg-card text-foreground hover:bg-muted;
   }
   .btn-ghost {
-    @apply btn text-slate-600 hover:bg-slate-100;
+    @apply btn text-muted-foreground hover:bg-muted;
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-navy placeholder:text-slate-400 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20;
+    @apply w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/25;
   }
   .label {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground;
   }
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
   }
   .th {
-    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground;
   }
   .td {
-    @apply whitespace-nowrap px-4 py-3 text-sm text-navy;
+    @apply whitespace-nowrap px-4 py-3 text-sm text-foreground;
   }
 }

@@ -31,11 +31,11 @@ export default function InvoicePage() {
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label} className="p-4">
-            <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-teal-soft/50 text-teal-deep">
+            <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <IconInvoice width={18} height={18} />
             </div>
-            <p className="text-xl font-bold text-navy">{s.value}</p>
-            <p className="text-sm text-slate-500">{s.label}</p>
+            <p className="text-xl font-bold text-foreground">{s.value}</p>
+            <p className="text-sm text-muted-foreground">{s.label}</p>
           </Card>
         ))}
       </div>
@@ -43,7 +43,7 @@ export default function InvoicePage() {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-muted">
               <tr>
                 <th className="th">No. Invoice</th>
                 <th className="th">Klien / Kontrak</th>
@@ -56,28 +56,28 @@ export default function InvoicePage() {
                 <th className="th"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {invoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50">
+                <tr key={inv.id} className="hover:bg-muted">
                   <td className="td font-semibold">{inv.number}</td>
                   <td className="td">
                     <p>{inv.client.name}</p>
                     <Badge tone="teal">{contractTypeLabel[inv.client.contractType]}</Badge>
                   </td>
-                  <td className="td text-slate-500">{inv.entity.invoicePrefix}</td>
-                  <td className="td text-right text-slate-600">
+                  <td className="td text-muted-foreground">{inv.entity.invoicePrefix}</td>
+                  <td className="td text-right text-muted-foreground">
                     {rupiah(inv.salarySubtotal + inv.bpjsClient)}
                   </td>
-                  <td className="td text-right text-slate-600">{rupiah(inv.managementFee)}</td>
-                  <td className="td text-right font-semibold text-navy">{rupiah(inv.grandTotal)}</td>
-                  <td className="td text-slate-500">{tanggal(inv.dueDate)}</td>
+                  <td className="td text-right text-muted-foreground">{rupiah(inv.managementFee)}</td>
+                  <td className="td text-right font-semibold text-foreground">{rupiah(inv.grandTotal)}</td>
+                  <td className="td text-muted-foreground">{tanggal(inv.dueDate)}</td>
                   <td className="td">
                     <StatusPill status={inv.status} />
                   </td>
                   <td className="td text-right">
                     <Link
                       href={`/invoice/${inv.id}`}
-                      className="font-semibold text-teal-dark hover:underline"
+                      className="font-semibold text-primary hover:underline"
                     >
                       Detail
                     </Link>

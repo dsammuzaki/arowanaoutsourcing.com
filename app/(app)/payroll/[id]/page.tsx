@@ -20,15 +20,15 @@ export default async function SlipPage({
 
   const Row = ({ label, value, bold, red }: { label: string; value: string; bold?: boolean; red?: boolean }) => (
     <div className="flex items-center justify-between py-1.5 text-sm">
-      <span className={bold ? "font-semibold text-navy" : "text-slate-600"}>{label}</span>
-      <span className={`${bold ? "font-bold" : ""} ${red ? "text-brand-red" : "text-navy"}`}>{value}</span>
+      <span className={bold ? "font-semibold text-foreground" : "text-muted-foreground"}>{label}</span>
+      <span className={`${bold ? "font-bold" : ""} ${red ? "text-brand-red" : "text-foreground"}`}>{value}</span>
     </div>
   );
 
   return (
     <>
       <div className="mb-5 flex items-center justify-between">
-        <Link href="/payroll" className="text-sm font-semibold text-teal-dark hover:underline">
+        <Link href="/payroll" className="text-sm font-semibold text-primary hover:underline">
           ← Kembali ke Payroll
         </Link>
         <div className="flex gap-2">
@@ -43,7 +43,7 @@ export default async function SlipPage({
 
       <Card className="mx-auto max-w-3xl overflow-hidden">
         {/* Slip header */}
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-navy p-6 text-white">
+        <div className="flex items-start justify-between gap-4 border-b border-border bg-navy p-6 text-white">
           <div className="flex items-center gap-3">
             <Logo size={44} />
             <div>
@@ -61,55 +61,55 @@ export default async function SlipPage({
         </div>
 
         {/* Employee info */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-b border-slate-100 p-6 text-sm sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-b border-border p-6 text-sm sm:grid-cols-4">
           <div>
-            <p className="text-xs text-slate-400">Nama</p>
-            <p className="font-semibold text-navy">{emp.name}</p>
+            <p className="text-xs text-muted-foreground">Nama</p>
+            <p className="font-semibold text-foreground">{emp.name}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">NIK</p>
-            <p className="font-semibold text-navy">{emp.nik}</p>
+            <p className="text-xs text-muted-foreground">NIK</p>
+            <p className="font-semibold text-foreground">{emp.nik}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Jabatan</p>
-            <p className="font-semibold text-navy">{emp.position}</p>
+            <p className="text-xs text-muted-foreground">Jabatan</p>
+            <p className="font-semibold text-foreground">{emp.position}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Status Pajak</p>
-            <p className="font-semibold text-navy">
+            <p className="text-xs text-muted-foreground">Status Pajak</p>
+            <p className="font-semibold text-foreground">
               {emp.maritalStatus}/{emp.dependents}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Penempatan</p>
-            <p className="font-semibold text-navy">{client?.name}</p>
+            <p className="text-xs text-muted-foreground">Penempatan</p>
+            <p className="font-semibold text-foreground">{client?.name}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Jenis Kontrak</p>
+            <p className="text-xs text-muted-foreground">Jenis Kontrak</p>
             <Badge tone="teal">{contractTypeLabel[emp.contractType]}</Badge>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Bank</p>
-            <p className="font-semibold text-navy">{emp.bankName} · {emp.bankAccount}</p>
+            <p className="text-xs text-muted-foreground">Bank</p>
+            <p className="font-semibold text-foreground">{emp.bankName} · {emp.bankAccount}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">NPWP</p>
-            <p className="font-semibold text-navy">{emp.npwp}</p>
+            <p className="text-xs text-muted-foreground">NPWP</p>
+            <p className="font-semibold text-foreground">{emp.npwp}</p>
           </div>
         </div>
 
         {/* Earnings / Deductions */}
         <div className="grid grid-cols-1 gap-6 p-6 sm:grid-cols-2">
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-teal-deep">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-primary">
               Penghasilan
             </p>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {l.earnings.map((e) => (
                 <Row key={e.label} label={e.label} value={rupiah(e.amount)} />
               ))}
             </div>
-            <div className="mt-2 border-t-2 border-slate-200 pt-2">
+            <div className="mt-2 border-t-2 border-border pt-2">
               <Row label="Total Bruto" value={rupiah(l.gross)} bold />
             </div>
           </div>
@@ -118,22 +118,22 @@ export default async function SlipPage({
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-red">
               Potongan
             </p>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               <Row label="BPJS TK + JP + Kesehatan" value={rupiah(l.bpjsEmployee)} />
               <Row label="PPh 21" value={rupiah(l.pph21)} red />
               {l.otherDeductions.map((d) => (
                 <Row key={d.label} label={d.label} value={rupiah(d.amount)} />
               ))}
             </div>
-            <div className="mt-2 border-t-2 border-slate-200 pt-2">
+            <div className="mt-2 border-t-2 border-border pt-2">
               <Row label="Total Potongan" value={rupiah(l.totalDeduction)} bold red />
             </div>
           </div>
         </div>
 
         {/* Tax basis note */}
-        <div className="mx-6 mb-6 rounded-lg bg-slate-50 p-4 text-xs text-slate-500">
-          <p className="mb-1 font-semibold text-slate-600">Dasar Perhitungan PPh 21</p>
+        <div className="mx-6 mb-6 rounded-lg bg-muted p-4 text-xs text-muted-foreground">
+          <p className="mb-1 font-semibold text-muted-foreground">Dasar Perhitungan PPh 21</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <span>Biaya Jabatan (5%): {rupiah(l.biayaJabatan)}</span>
             <span>PTKP setahun: {rupiah(l.ptkp)}</span>
@@ -143,14 +143,14 @@ export default async function SlipPage({
         </div>
 
         {/* Take home */}
-        <div className="flex items-center justify-between bg-teal-soft/40 px-6 py-5">
+        <div className="flex items-center justify-between bg-primary/10 px-6 py-5">
           <div>
-            <p className="text-sm font-semibold text-teal-deep">GAJI DITERIMA (Take-Home Pay)</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-semibold text-primary">GAJI DITERIMA (Take-Home Pay)</p>
+            <p className="text-xs text-muted-foreground">
               Dibayarkan via {l.method === "tunai" ? "Tunai / Amplop" : `Transfer ${emp.bankName}`}
             </p>
           </div>
-          <p className="text-2xl font-bold text-navy">{rupiah(l.takeHome)}</p>
+          <p className="text-2xl font-bold text-foreground">{rupiah(l.takeHome)}</p>
         </div>
       </Card>
     </>

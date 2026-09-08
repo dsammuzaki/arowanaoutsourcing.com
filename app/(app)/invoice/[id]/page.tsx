@@ -29,10 +29,10 @@ export default async function InvoiceDetailPage({
     minus?: boolean;
   }) => (
     <div className="flex items-center justify-between py-2 text-sm">
-      <span className={bold ? "font-semibold text-navy" : "text-slate-600"}>
-        {label} {sub && <span className="text-xs text-slate-400">{sub}</span>}
+      <span className={bold ? "font-semibold text-foreground" : "text-muted-foreground"}>
+        {label} {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
       </span>
-      <span className={`${bold ? "font-bold text-navy" : minus ? "text-brand-red" : "text-navy"}`}>
+      <span className={`${bold ? "font-bold text-foreground" : minus ? "text-brand-red" : "text-foreground"}`}>
         {minus ? "− " : ""}
         {value}
       </span>
@@ -42,7 +42,7 @@ export default async function InvoiceDetailPage({
   return (
     <>
       <div className="mb-5 flex items-center justify-between">
-        <Link href="/invoice" className="text-sm font-semibold text-teal-dark hover:underline">
+        <Link href="/invoice" className="text-sm font-semibold text-primary hover:underline">
           ← Kembali ke Invoice
         </Link>
         <div className="flex gap-2">
@@ -64,20 +64,20 @@ export default async function InvoiceDetailPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="overflow-hidden lg:col-span-2">
           {/* Header */}
-          <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-6">
+          <div className="flex items-start justify-between gap-4 border-b border-border p-6">
             <div className="flex items-center gap-3">
               <Logo size={44} />
               <div>
-                <p className="font-bold text-navy">{inv.entity.name}</p>
-                <p className="text-xs text-slate-500">NPWP {inv.entity.npwp}</p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="font-bold text-foreground">{inv.entity.name}</p>
+                <p className="text-xs text-muted-foreground">NPWP {inv.entity.npwp}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
                   Ruko The East Point No.13, Tambun Selatan, Bekasi 17510
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-lg font-bold text-navy">INVOICE</p>
-              <p className="text-sm font-semibold text-teal-dark">{inv.number}</p>
+              <p className="text-lg font-bold text-foreground">INVOICE</p>
+              <p className="text-sm font-semibold text-primary">{inv.number}</p>
               <div className="mt-1">
                 <StatusPill status={inv.status} />
               </div>
@@ -85,24 +85,24 @@ export default async function InvoiceDetailPage({
           </div>
 
           {/* Bill to */}
-          <div className="grid grid-cols-2 gap-4 border-b border-slate-100 p-6 text-sm">
+          <div className="grid grid-cols-2 gap-4 border-b border-border p-6 text-sm">
             <div>
-              <p className="text-xs text-slate-400">Ditagihkan kepada</p>
-              <p className="font-semibold text-navy">{inv.client.name}</p>
-              <p className="mt-1 text-xs text-slate-500">No. SPK/PO: {inv.client.spkNumber}</p>
+              <p className="text-xs text-muted-foreground">Ditagihkan kepada</p>
+              <p className="font-semibold text-foreground">{inv.client.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">No. SPK/PO: {inv.client.spkNumber}</p>
               <Badge tone="teal">{contractTypeLabel[inv.client.contractType]}</Badge>
             </div>
             <div className="text-right">
-              <p className="text-xs text-slate-400">Periode</p>
-              <p className="font-semibold text-navy">{inv.period}</p>
-              <p className="mt-1 text-xs text-slate-400">Jatuh tempo</p>
-              <p className="font-semibold text-navy">{tanggal(inv.dueDate)}</p>
+              <p className="text-xs text-muted-foreground">Periode</p>
+              <p className="font-semibold text-foreground">{inv.period}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Jatuh tempo</p>
+              <p className="font-semibold text-foreground">{tanggal(inv.dueDate)}</p>
             </div>
           </div>
 
           {/* Breakdown */}
           <div className="p-6">
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               <Row label="Subtotal Gaji Karyawan" value={rupiah(inv.salarySubtotal)} />
               <Row label="BPJS (bagian tagihan klien)" value={rupiah(inv.bpjsClient)} />
               <Row
@@ -133,7 +133,7 @@ export default async function InvoiceDetailPage({
         {/* Side: documents & summary */}
         <div className="space-y-6">
           <Card className="p-5">
-            <h3 className="mb-3 font-bold text-navy">Dokumen Pendamping</h3>
+            <h3 className="mb-3 font-bold text-foreground">Dokumen Pendamping</h3>
             <div className="space-y-2">
               {[
                 { icon: IconTruck, label: "Surat Jalan", desc: "Pengiriman invoice fisik" },
@@ -142,14 +142,14 @@ export default async function InvoiceDetailPage({
               ].map((d) => (
                 <button
                   key={d.label}
-                  className="flex w-full items-center gap-3 rounded-lg border border-slate-200 p-3 text-left hover:bg-slate-50"
+                  className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left hover:bg-muted"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-soft/50 text-teal-deep">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <d.icon width={18} height={18} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-navy">{d.label}</p>
-                    <p className="text-xs text-slate-500">{d.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{d.label}</p>
+                    <p className="text-xs text-muted-foreground">{d.desc}</p>
                   </div>
                 </button>
               ))}
@@ -157,19 +157,19 @@ export default async function InvoiceDetailPage({
           </Card>
 
           <Card className="p-5">
-            <h3 className="mb-3 font-bold text-navy">Ringkasan Pajak</h3>
+            <h3 className="mb-3 font-bold text-foreground">Ringkasan Pajak</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">PPN dipungut</span>
-                <span className="font-semibold text-navy">{rupiah(inv.ppn)}</span>
+                <span className="text-muted-foreground">PPN dipungut</span>
+                <span className="font-semibold text-foreground">{rupiah(inv.ppn)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">PPh 23 dipotong</span>
+                <span className="text-muted-foreground">PPh 23 dipotong</span>
                 <span className="font-semibold text-brand-red">{rupiah(inv.pph23)}</span>
               </div>
-              <div className="flex justify-between border-t border-slate-100 pt-2">
-                <span className="text-slate-500">Management Fee neto</span>
-                <span className="font-semibold text-navy">
+              <div className="flex justify-between border-t border-border pt-2">
+                <span className="text-muted-foreground">Management Fee neto</span>
+                <span className="font-semibold text-foreground">
                   {rupiah(inv.managementFee - inv.pph23)}
                 </span>
               </div>

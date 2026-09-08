@@ -49,17 +49,17 @@ export default function LoginPage() {
       </div>
 
       {/* Right form */}
-      <div className="flex w-full items-center justify-center bg-slate-50 px-6 lg:w-1/2">
+      <div className="flex w-full items-center justify-center bg-muted px-6 lg:w-1/2">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <Logo size={40} />
             <div className="leading-tight">
-              <p className="font-bold text-navy">Arowana Bintang Perdana</p>
-              <p className="text-xs text-teal-dark">Outsourcing System</p>
+              <p className="font-bold text-foreground">Arowana Bintang Perdana</p>
+              <p className="text-xs text-primary">Outsourcing System</p>
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-navy">Masuk ke akun Anda</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-foreground">Masuk ke akun Anda</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Selamat datang kembali. Silakan masukkan kredensial Anda.
           </p>
 
@@ -73,11 +73,11 @@ export default function LoginPage() {
               <input className="input" type="password" placeholder="••••••••" defaultValue="password" />
             </div>
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-slate-600">
-                <input type="checkbox" className="rounded border-slate-300 text-teal focus:ring-teal" />
+              <label className="flex items-center gap-2 text-muted-foreground">
+                <input type="checkbox" className="rounded border-input text-teal focus:ring-teal" />
                 Ingat saya
               </label>
-              <a href="#" className="font-semibold text-teal-dark hover:underline">
+              <a href="#" className="font-semibold text-primary hover:underline">
                 Lupa sandi?
               </a>
             </div>
@@ -86,8 +86,8 @@ export default function LoginPage() {
             </Link>
           </form>
 
-          <div className="mt-6 rounded-lg border border-slate-200 bg-white p-3 text-center text-xs text-slate-500">
-            Mode demo — klik <span className="font-semibold text-navy">Masuk</span> untuk
+          <div className="mt-6 rounded-lg border border-border bg-card p-3 text-center text-xs text-muted-foreground">
+            Mode demo — klik <span className="font-semibold text-foreground">Masuk</span> untuk
             menjelajahi prototipe.
           </div>
         </div>

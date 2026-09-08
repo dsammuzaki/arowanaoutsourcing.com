@@ -4,10 +4,10 @@ import { employees, clients, attendanceSummary } from "@/lib/data";
 
 type Status = "H" | "I" | "S" | "C" | "A";
 const statusMeta: Record<Status, { label: string; cls: string }> = {
-  H: { label: "Hadir", cls: "bg-teal-soft/60 text-teal-deep" },
+  H: { label: "Hadir", cls: "bg-primary/10 text-primary" },
   I: { label: "Izin", cls: "bg-amber-50 text-amber-700" },
   S: { label: "Sakit", cls: "bg-indigo-50 text-indigo-700" },
-  C: { label: "Cuti", cls: "bg-slate-100 text-slate-600" },
+  C: { label: "Cuti", cls: "bg-muted text-muted-foreground" },
   A: { label: "Alpha", cls: "bg-red-50 text-brand-red" },
 };
 
@@ -60,22 +60,22 @@ export default function AbsensiPage() {
                   : c.tone === "amber"
                   ? "bg-amber-50 text-amber-700"
                   : c.tone === "navy"
-                  ? "bg-navy/10 text-navy"
-                  : "bg-teal-soft/50 text-teal-deep"
+                  ? "bg-navy/10 text-foreground"
+                  : "bg-primary/10 text-primary"
               }`}
             >
               <IconClock width={20} height={20} />
             </div>
             <div>
-              <p className="text-xl font-bold text-navy">{c.value}</p>
-              <p className="text-xs text-slate-500">{c.label}</p>
+              <p className="text-xl font-bold text-foreground">{c.value}</p>
+              <p className="text-xs text-muted-foreground">{c.label}</p>
             </div>
           </Card>
         ))}
       </div>
 
       <Card className="overflow-hidden">
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
           {(Object.keys(statusMeta) as Status[]).map((s) => (
             <span key={s} className={`badge ${statusMeta[s].cls}`}>
               {s} · {statusMeta[s].label}
@@ -84,9 +84,9 @@ export default function AbsensiPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
-            <thead className="bg-slate-50">
+            <thead className="bg-muted">
               <tr>
-                <th className="th sticky left-0 z-10 bg-slate-50">Karyawan</th>
+                <th className="th sticky left-0 z-10 bg-muted">Karyawan</th>
                 {days.map((d) => (
                   <th key={d} className="th px-2 text-center">
                     {d}
@@ -94,12 +94,12 @@ export default function AbsensiPage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {shown.map((e, i) => (
-                <tr key={e.id} className="hover:bg-slate-50">
-                  <td className="td sticky left-0 z-10 bg-white">
-                    <p className="font-semibold text-navy">{e.name}</p>
-                    <p className="text-xs text-slate-400">{e.position}</p>
+                <tr key={e.id} className="hover:bg-muted">
+                  <td className="td sticky left-0 z-10 bg-card">
+                    <p className="font-semibold text-foreground">{e.name}</p>
+                    <p className="text-xs text-muted-foreground">{e.position}</p>
                   </td>
                   {days.map((d) => {
                     const st = seedStatus(i, d);

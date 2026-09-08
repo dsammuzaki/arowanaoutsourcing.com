@@ -12,8 +12,8 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-navy">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -22,12 +22,12 @@ export function PageHeader({
 
 const toneMap: Record<string, string> = {
   green: "bg-emerald-50 text-emerald-700",
-  teal: "bg-teal-soft/60 text-teal-deep",
+  teal: "bg-primary/10 text-primary",
   gold: "bg-gold-soft/70 text-gold-dark",
   red: "bg-red-50 text-brand-red",
   amber: "bg-amber-50 text-amber-700",
-  slate: "bg-slate-100 text-slate-600",
-  navy: "bg-navy/10 text-navy",
+  slate: "bg-muted text-muted-foreground",
+  navy: "bg-navy/10 text-foreground",
 };
 
 export function Badge({
@@ -48,6 +48,12 @@ const statusConfig: Record<string, { tone: string; label: string }> = {
   aktif: { tone: "green", label: "Aktif" },
   keluar: { tone: "slate", label: "Keluar" },
   pending: { tone: "amber", label: "Pending" },
+  dibuka: { tone: "green", label: "Dibuka" },
+  ditutup: { tone: "slate", label: "Ditutup" },
+  disetujui: { tone: "green", label: "Disetujui" },
+  ditolak: { tone: "red", label: "Ditolak" },
+  berjalan: { tone: "teal", label: "Berjalan" },
+  selesai: { tone: "green", label: "Selesai" },
 };
 
 export function StatusPill({ status }: { status: string }) {

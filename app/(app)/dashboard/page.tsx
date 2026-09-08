@@ -8,6 +8,7 @@ import {
   contractTypeLabel,
 } from "@/lib/data";
 import { rupiah, angka, persen } from "@/lib/format";
+import { TrendChart, AttendanceDonut } from "@/components/charts";
 
 const totalPayroll = clientComparison.reduce((s, c) => s + c.payrollNow, 0);
 const totalPrev = clientComparison.reduce((s, c) => s + c.payrollPrev, 0);
@@ -88,8 +89,8 @@ export default function DashboardPage() {
                     s.tone === "red"
                       ? "bg-red-50 text-brand-red"
                       : s.tone === "navy"
-                      ? "bg-navy/10 text-navy"
-                      : "bg-teal-soft/50 text-teal-deep"
+                      ? "bg-navy/10 text-foreground"
+                      : "bg-primary/10 text-primary"
                   }`}
                 >
                   <s.Icon width={22} height={22} />
@@ -103,34 +104,53 @@ export default function DashboardPage() {
                   {persen(s.delta)}
                 </span>
               </div>
-              <p className="mt-4 text-2xl font-bold text-navy">{s.value}</p>
-              <p className="mt-1 text-sm text-slate-500">{s.label}</p>
+              <p className="mt-4 text-2xl font-bold text-foreground">{s.value}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{s.label}</p>
             </Card>
           );
         })}
       </div>
 
+      {/* Trend chart */}
+      <Card className="mt-6 p-5">
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-foreground">Tren Gaji vs Tagihan</h2>
+            <p className="text-xs text-muted-foreground">6 bulan terakhir (dalam juta Rupiah)</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="h-2.5 w-2.5 rounded-full bg-teal" /> Gaji
+            </span>
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="h-2.5 w-2.5 rounded-full bg-gold" /> Tagihan
+            </span>
+          </div>
+        </div>
+        <TrendChart />
+      </Card>
+
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Per-client comparison — the key PRD insight */}
         <Card className="lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div>
-              <h2 className="font-bold text-navy">Perbandingan per Klien</h2>
-              <p className="text-xs text-slate-500">Bulan ini vs bulan lalu</p>
+              <h2 className="font-bold text-foreground">Perbandingan per Klien</h2>
+              <p className="text-xs text-muted-foreground">Bulan ini vs bulan lalu</p>
             </div>
-            <Link href="/invoice" className="text-sm font-semibold text-teal-dark hover:underline">
+            <Link href="/invoice" className="text-sm font-semibold text-primary hover:underline">
               Lihat semua
             </Link>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {clientComparison.map((c) => {
               const up = c.growth >= 0;
               return (
                 <div key={c.client.id} className="px-5 py-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-navy">{c.client.name}</p>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                      <p className="truncate font-semibold text-foreground">{c.client.name}</p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge tone="teal">{contractTypeLabel[c.client.contractType]}</Badge>
                         <span>{angka(c.headcountNow)} org</span>
                         <span
@@ -139,7 +159,7 @@ export default function DashboardPage() {
                               ? "text-emerald-600"
                               : c.hcDelta < 0
                               ? "text-brand-red"
-                              : "text-slate-400"
+                              : "text-muted-foreground"
                           }
                         >
                           {c.hcDelta > 0 ? "+" : ""}
@@ -148,7 +168,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-navy">{rupiah(c.payrollNow, { compact: true })}</p>
+                      <p className="font-semibold text-foreground">{rupiah(c.payrollNow, { compact: true })}</p>
                       <p
                         className={`mt-0.5 inline-flex items-center gap-0.5 text-xs font-semibold ${
                           up ? "text-emerald-600" : "text-brand-red"
@@ -159,7 +179,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full bg-teal"
                       style={{ width: `${(c.payrollNow / maxPayroll) * 100}%` }}
@@ -173,27 +193,20 @@ export default function DashboardPage() {
 
         {/* Attendance summary */}
         <Card>
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="font-bold text-navy">Absensi Hari Ini</h2>
-            <p className="text-xs text-slate-500">{attTotal} tenaga kerja terjadwal</p>
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="font-bold text-foreground">Absensi Hari Ini</h2>
+            <p className="text-xs text-muted-foreground">{attTotal} tenaga kerja terjadwal</p>
           </div>
           <div className="p-5">
-            <div className="flex h-3 overflow-hidden rounded-full">
-              {attendanceBars.map((b) => (
-                <div
-                  key={b.label}
-                  style={{ width: `${(b.value / attTotal) * 100}%`, background: b.color }}
-                />
-              ))}
-            </div>
-            <div className="mt-5 space-y-3">
+            <AttendanceDonut data={attendanceBars} />
+            <div className="mt-4 space-y-3">
               {attendanceBars.map((b) => (
                 <div key={b.label} className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-slate-600">
+                  <span className="flex items-center gap-2 text-muted-foreground">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.color }} />
                     {b.label}
                   </span>
-                  <span className="font-semibold text-navy">{b.value}</span>
+                  <span className="font-semibold text-foreground">{b.value}</span>
                 </div>
               ))}
             </div>
@@ -206,15 +219,15 @@ export default function DashboardPage() {
 
       {/* Recent invoices */}
       <Card className="mt-6 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="font-bold text-navy">Invoice Terbaru</h2>
-          <Link href="/invoice" className="text-sm font-semibold text-teal-dark hover:underline">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="font-bold text-foreground">Invoice Terbaru</h2>
+          <Link href="/invoice" className="text-sm font-semibold text-primary hover:underline">
             Semua invoice
           </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-muted">
               <tr>
                 <th className="th">No. Invoice</th>
                 <th className="th">Klien</th>
@@ -224,14 +237,14 @@ export default function DashboardPage() {
                 <th className="th">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {invoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50">
+                <tr key={inv.id} className="hover:bg-muted">
                   <td className="td font-semibold">{inv.number}</td>
                   <td className="td">{inv.client.name}</td>
-                  <td className="td text-slate-500">{inv.entity.invoicePrefix}</td>
+                  <td className="td text-muted-foreground">{inv.entity.invoicePrefix}</td>
                   <td className="td text-right font-semibold">{rupiah(inv.grandTotal)}</td>
-                  <td className="td text-slate-500">{inv.dueDate}</td>
+                  <td className="td text-muted-foreground">{inv.dueDate}</td>
                   <td className="td">
                     <StatusPill status={inv.status} />
                   </td>

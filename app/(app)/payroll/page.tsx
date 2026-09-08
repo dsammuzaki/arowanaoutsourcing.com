@@ -44,23 +44,23 @@ export default function PayrollPage() {
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((s, i) => (
           <Card key={s.label} className="p-4">
-            <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-teal-soft/50 text-teal-deep">
+            <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <IconWallet width={18} height={18} />
             </div>
-            <p className="text-xl font-bold text-navy">{s.value}</p>
-            <p className="text-sm text-slate-500">{s.label}</p>
+            <p className="text-xl font-bold text-foreground">{s.value}</p>
+            <p className="text-sm text-muted-foreground">{s.label}</p>
           </Card>
         ))}
       </div>
 
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="font-bold text-navy">Rincian Gaji per Karyawan</h2>
-          <span className="text-sm text-slate-500">{lines.length} karyawan</span>
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="font-bold text-foreground">Rincian Gaji per Karyawan</h2>
+          <span className="text-sm text-muted-foreground">{lines.length} karyawan</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-muted">
               <tr>
                 <th className="th">Karyawan</th>
                 <th className="th">PTKP</th>
@@ -72,17 +72,17 @@ export default function PayrollPage() {
                 <th className="th text-right">Slip</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {lines.map((l) => {
                 const client = clients.find((c) => c.id === l.employee.clientId);
                 return (
-                  <tr key={l.employee.id} className="hover:bg-slate-50">
+                  <tr key={l.employee.id} className="hover:bg-muted">
                     <td className="td">
                       <div className="flex items-center gap-3">
                         <Avatar name={l.employee.name} tone="navy" />
                         <div>
-                          <p className="font-semibold text-navy">{l.employee.name}</p>
-                          <p className="text-xs text-slate-500">
+                          <p className="font-semibold text-foreground">{l.employee.name}</p>
+                          <p className="text-xs text-muted-foreground">
                             {client?.name} · {contractTypeLabel[l.employee.contractType]}
                           </p>
                         </div>
@@ -94,9 +94,9 @@ export default function PayrollPage() {
                       </Badge>
                     </td>
                     <td className="td text-right">{rupiah(l.gross)}</td>
-                    <td className="td text-right text-slate-500">{rupiah(l.bpjsEmployee)}</td>
+                    <td className="td text-right text-muted-foreground">{rupiah(l.bpjsEmployee)}</td>
                     <td className="td text-right text-brand-red">{rupiah(l.pph21)}</td>
-                    <td className="td text-right font-semibold text-navy">{rupiah(l.takeHome)}</td>
+                    <td className="td text-right font-semibold text-foreground">{rupiah(l.takeHome)}</td>
                     <td className="td">
                       <Badge tone={l.method === "tunai" ? "amber" : "teal"}>
                         {l.method === "tunai" ? "Tunai" : "Transfer"}
@@ -105,7 +105,7 @@ export default function PayrollPage() {
                     <td className="td text-right">
                       <Link
                         href={`/payroll/${l.employee.id}`}
-                        className="font-semibold text-teal-dark hover:underline"
+                        className="font-semibold text-primary hover:underline"
                       >
                         Lihat
                       </Link>

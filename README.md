@@ -32,5 +32,5 @@ Buka http://localhost:3000
 Lihat panduan langkah demi langkah di **DEPLOY.md**.
 
 ---
-Palet warna & identitas diambil dari Company Profile PT. Arowana Bintang Perdana
-(teal `#1d9ca3`, navy `#0c1320`, merah `#da1315`).
+Palet warna & identitas mengikuti logo PT. Arowana Bintang Perdana
+(teal `#1a7d9c`, emas `#c69a34`, deep teal-ink `#0a2029`).
