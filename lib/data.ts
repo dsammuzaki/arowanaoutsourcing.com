@@ -878,3 +878,91 @@ export const aboutCompany = {
     { label: "Tenaga Kerja", value: String(employees.filter((e) => e.status === "aktif").length) },
   ],
 };
+
+// =====================================================================
+// Manajemen Proyek — Kanban (terinspirasi monday.com) — mock
+// =====================================================================
+export type KanbanColKey = "backlog" | "todo" | "progress" | "review" | "done";
+export type Priority = "rendah" | "sedang" | "tinggi" | "urgent";
+export type ApprovalStatus = "draft" | "menunggu" | "disetujui" | "ditolak";
+
+export interface KanbanColumn {
+  key: KanbanColKey;
+  label: string;
+  color: string;
+}
+
+export const kanbanColumns: KanbanColumn[] = [
+  { key: "backlog", label: "Backlog", color: "#94a3b8" },
+  { key: "todo", label: "To Do", color: "#1a7d9c" },
+  { key: "progress", label: "Dikerjakan", color: "#c69a34" },
+  { key: "review", label: "Review", color: "#8b5cf6" },
+  { key: "done", label: "Selesai", color: "#2e9e6b" },
+];
+
+export interface ProjectGroup {
+  id: string;
+  name: string;
+  color: string;
+  owner: string;
+  due: string;
+}
+
+export const projectGroups: ProjectGroup[] = [
+  { id: "pg-1", name: "Rekrutmen Security DPM", color: "#1a7d9c", owner: "Mariyanti", due: "2026-09-30" },
+  { id: "pg-2", name: "Payroll & Invoice Agustus", color: "#c69a34", owner: "Deo Galuh", due: "2026-09-15" },
+  { id: "pg-3", name: "Onboarding Batch September", color: "#8b5cf6", owner: "Tri Antoro", due: "2026-09-25" },
+];
+
+export interface ProjectTask {
+  id: string;
+  projectId: string;
+  title: string;
+  desc: string;
+  column: KanbanColKey;
+  priority: Priority;
+  assignee: string;
+  due: string;
+  checklistDone: number;
+  checklistTotal: number;
+  comments: number;
+  approvalStatus: ApprovalStatus;
+  approver: string;
+}
+
+const A = (n: string) => n;
+export const projectTasks: ProjectTask[] = [
+  { id: "t-1", projectId: "pg-1", title: "Publikasi lowongan Anggota Security", desc: "Buat & publikasikan 6 lowongan Security untuk klien DPM di job portal & referral.", column: "done", priority: "tinggi", assignee: A("Mariyanti"), due: "2026-09-05", checklistDone: 4, checklistTotal: 4, comments: 3, approvalStatus: "disetujui", approver: "Tri Antoro" },
+  { id: "t-2", projectId: "pg-1", title: "Skrining 24 pelamar", desc: "Seleksi administrasi & telepon awal untuk 24 pelamar Security.", column: "progress", priority: "sedang", assignee: A("Rina Firmansyah"), due: "2026-09-12", checklistDone: 12, checklistTotal: 24, comments: 5, approvalStatus: "draft", approver: "Mariyanti" },
+  { id: "t-3", projectId: "pg-1", title: "Interview kandidat terpilih", desc: "Jadwalkan & lakukan interview 8 kandidat lolos skrining.", column: "todo", priority: "tinggi", assignee: A("Deo Galuh"), due: "2026-09-16", checklistDone: 0, checklistTotal: 8, comments: 1, approvalStatus: "draft", approver: "Mariyanti" },
+  { id: "t-4", projectId: "pg-1", title: "Kontrak & penempatan", desc: "Terbitkan kontrak dan atur penempatan 6 Anggota di lokasi DPM.", column: "backlog", priority: "urgent", assignee: A("Tri Antoro"), due: "2026-09-28", checklistDone: 0, checklistTotal: 6, comments: 0, approvalStatus: "draft", approver: "Tri Antoro" },
+  { id: "t-5", projectId: "pg-2", title: "Finalisasi perhitungan PPh 21", desc: "Verifikasi PTKP/PKP & PPh 21 seluruh karyawan periode Agustus.", column: "review", priority: "urgent", assignee: A("Deo Galuh"), due: "2026-09-10", checklistDone: 3, checklistTotal: 3, comments: 7, approvalStatus: "menunggu", approver: "Tri Antoro" },
+  { id: "t-6", projectId: "pg-2", title: "Batch transfer bank", desc: "Siapkan file transfer per bank untuk pencairan gaji.", column: "progress", priority: "tinggi", assignee: A("Deo Galuh"), due: "2026-09-12", checklistDone: 2, checklistTotal: 5, comments: 2, approvalStatus: "draft", approver: "Deo Galuh" },
+  { id: "t-7", projectId: "pg-2", title: "Terbitkan invoice ke 4 klien", desc: "Generate invoice + Surat Jalan & Internal Memo untuk semua klien.", column: "todo", priority: "sedang", assignee: A("Mariyanti"), due: "2026-09-14", checklistDone: 0, checklistTotal: 4, comments: 0, approvalStatus: "draft", approver: "Deo Galuh" },
+  { id: "t-8", projectId: "pg-2", title: "Laporan fee Pak Adang", desc: "Hitung & catat fee komisi pihak ketiga dari MF neto.", column: "backlog", priority: "rendah", assignee: A("Deo Galuh"), due: "2026-09-18", checklistDone: 0, checklistTotal: 2, comments: 0, approvalStatus: "draft", approver: "Tri Antoro" },
+  { id: "t-9", projectId: "pg-3", title: "Kelengkapan dokumen 8 karyawan baru", desc: "Kumpulkan KTP, NPWP, ijazah, dan pas foto karyawan baru.", column: "progress", priority: "sedang", assignee: A("Rina Firmansyah"), due: "2026-09-13", checklistDone: 5, checklistTotal: 8, comments: 4, approvalStatus: "draft", approver: "Mariyanti" },
+  { id: "t-10", projectId: "pg-3", title: "Pendaftaran BPJS TK & Kesehatan", desc: "Daftarkan 8 karyawan baru ke BPJS Ketenagakerjaan & Kesehatan.", column: "todo", priority: "tinggi", assignee: A("Mariyanti"), due: "2026-09-19", checklistDone: 0, checklistTotal: 8, comments: 1, approvalStatus: "draft", approver: "Deo Galuh" },
+  { id: "t-11", projectId: "pg-3", title: "Briefing SOP & orientasi", desc: "Orientasi SOP penempatan untuk karyawan baru batch September.", column: "backlog", priority: "sedang", assignee: A("Tri Antoro"), due: "2026-09-24", checklistDone: 0, checklistTotal: 3, comments: 0, approvalStatus: "draft", approver: "Tri Antoro" },
+  { id: "t-12", projectId: "pg-3", title: "Serah terima seragam & perlengkapan", desc: "Distribusi seragam & perlengkapan kerja karyawan baru.", column: "review", priority: "rendah", assignee: A("Rina Firmansyah"), due: "2026-09-22", checklistDone: 6, checklistTotal: 6, comments: 2, approvalStatus: "menunggu", approver: "Mariyanti" },
+];
+
+export const priorityMeta: Record<Priority, { label: string; cls: string }> = {
+  rendah: { label: "Rendah", cls: "bg-muted text-muted-foreground" },
+  sedang: { label: "Sedang", cls: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400" },
+  tinggi: { label: "Tinggi", cls: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" },
+  urgent: { label: "Urgent", cls: "bg-red-50 text-brand-red dark:bg-red-950/40" },
+};
+
+export const approvalMeta: Record<ApprovalStatus, { label: string; cls: string }> = {
+  draft: { label: "Draft", cls: "bg-muted text-muted-foreground" },
+  menunggu: { label: "Menunggu Approval", cls: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" },
+  disetujui: { label: "Disetujui", cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" },
+  ditolak: { label: "Ditolak", cls: "bg-red-50 text-brand-red dark:bg-red-950/40" },
+};
+
+export const projectStats = {
+  totalProyek: projectGroups.length,
+  totalTugas: projectTasks.length,
+  selesai: projectTasks.filter((t) => t.column === "done").length,
+  menungguApproval: projectTasks.filter((t) => t.approvalStatus === "menunggu").length,
+};
