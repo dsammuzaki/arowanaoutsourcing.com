@@ -54,6 +54,8 @@ const statusConfig: Record<string, { tone: string; label: string }> = {
   ditolak: { tone: "red", label: "Ditolak" },
   berjalan: { tone: "teal", label: "Berjalan" },
   selesai: { tone: "green", label: "Selesai" },
+  segera_berakhir: { tone: "amber", label: "Segera Berakhir" },
+  berakhir: { tone: "red", label: "Berakhir" },
 };
 
 export function StatusPill({ status }: { status: string }) {

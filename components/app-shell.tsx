@@ -17,6 +17,7 @@ import {
   UserPlus,
   CalendarDays,
   Target,
+  FileClock,
   Search,
   Bell,
   LogOut,
@@ -39,6 +40,7 @@ const nav = [
     group: "SDM",
     items: [
       { href: "/rekrutmen", label: "Rekrutmen", Icon: UserPlus },
+      { href: "/kontrak", label: "Monitoring Kontrak", Icon: FileClock },
       { href: "/cuti", label: "Manajemen Cuti", Icon: CalendarDays },
       { href: "/kinerja", label: "Kinerja & KPI", Icon: Target },
     ],

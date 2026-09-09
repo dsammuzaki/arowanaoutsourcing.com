@@ -702,3 +702,93 @@ export const dashboardKpis = {
   activeJobs: jobPostings.filter((j) => j.status === "dibuka").length,
   jobsThisMonth: 5,
 };
+
+// =====================================================================
+// Monitoring Kontrak Karyawan — masa & sisa kontrak
+// =====================================================================
+// Tanggal acuan "hari ini" agar hasil deterministik (tanpa Date.now)
+export const REF_DATE = "2026-09-09";
+
+function addMonths(iso: string, months: number): string {
+  const d = new Date(iso);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+function daysBetween(aIso: string, bIso: string): number {
+  const ms = new Date(bIso).getTime() - new Date(aIso).getTime();
+  return Math.round(ms / 86400000);
+}
+
+export type ContractStatus = "aktif" | "segera_berakhir" | "berakhir";
+
+export interface EmployeeContract {
+  employee: Employee;
+  contractType: ContractType;
+  termMonths: number;
+  start: string;
+  end: string;
+  totalDays: number;
+  elapsedDays: number;
+  remainingDays: number;
+  progressPct: number; // 0..100 masa kontrak berjalan
+  masaKerjaMonths: number; // sejak tanggal masuk
+  status: ContractStatus;
+}
+
+const SOON_THRESHOLD_DAYS = 60; // < 60 hari = segera berakhir
+
+export const employeeContracts: EmployeeContract[] = employees
+  .filter((e) => e.status === "aktif")
+  .map((e, i) => {
+    const termMonths = [12, 24, 12, 18, 6][i % 5];
+    // start di-stagger supaya ada yang baru, hampir habis, dan sudah lewat
+    const monthsElapsed = (i * 5) % (termMonths + 5);
+    const start = addMonths(REF_DATE, -monthsElapsed);
+    const end = addMonths(start, termMonths);
+    const totalDays = Math.max(1, daysBetween(start, end));
+    const elapsedDays = Math.min(daysBetween(start, REF_DATE), totalDays);
+    const remainingDays = daysBetween(REF_DATE, end);
+    const progressPct = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
+    const masaKerjaMonths = Math.max(0, Math.round(daysBetween(e.joinDate, REF_DATE) / 30));
+    const status: ContractStatus =
+      remainingDays < 0 ? "berakhir" : remainingDays <= SOON_THRESHOLD_DAYS ? "segera_berakhir" : "aktif";
+    return {
+      employee: e,
+      contractType: e.contractType,
+      termMonths,
+      start,
+      end,
+      totalDays,
+      elapsedDays,
+      remainingDays,
+      progressPct,
+      masaKerjaMonths,
+      status,
+    };
+  });
+
+export function formatDurasi(days: number): string {
+  const abs = Math.abs(days);
+  const years = Math.floor(abs / 365);
+  const months = Math.floor((abs % 365) / 30);
+  const rest = abs % 30;
+  const parts: string[] = [];
+  if (years) parts.push(`${years} thn`);
+  if (months) parts.push(`${months} bln`);
+  if (!years && !months) parts.push(`${rest} hari`);
+  else if (rest && !years) parts.push(`${rest} hari`);
+  return parts.join(" ");
+}
+
+export const kontrakStats = {
+  total: employeeContracts.length,
+  aktif: employeeContracts.filter((c) => c.status === "aktif").length,
+  segeraBerakhir: employeeContracts.filter((c) => c.status === "segera_berakhir").length,
+  berakhir: employeeContracts.filter((c) => c.status === "berakhir").length,
+};
+
+export const contractStatusLabel: Record<ContractStatus, string> = {
+  aktif: "Aktif",
+  segera_berakhir: "Segera Berakhir",
+  berakhir: "Berakhir",
+};
