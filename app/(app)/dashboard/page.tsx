@@ -209,11 +209,12 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Welcome banner */}
       <div className="relative overflow-hidden rounded-2xl bg-navy px-6 py-6 text-white">
+        <span className="hero-anim pointer-events-none absolute inset-0 opacity-45" />
         <span
-          className="pointer-events-none absolute inset-0 opacity-40"
+          className="pointer-events-none absolute inset-0 opacity-30"
           style={{
             background:
-              "radial-gradient(500px circle at 12% 20%, #1a7d9c, transparent 55%), radial-gradient(460px circle at 88% 80%, #c69a34, transparent 60%)",
+              "radial-gradient(420px circle at 15% 15%, rgba(230,196,110,0.5), transparent 60%), radial-gradient(420px circle at 85% 90%, rgba(26,125,156,0.5), transparent 60%)",
           }}
         />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -224,8 +225,8 @@ export default function DashboardPage() {
               Berikut ringkasan operasional PT. Arowana Bintang Perdana hari ini.
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <span className="flex items-center gap-1.5 rounded-full bg-teal/20 px-3 py-1 text-sm font-semibold text-teal-soft">
-                <span className="h-2 w-2 rounded-full bg-teal-soft" /> {presentToday} hadir hari ini
+              <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-emerald-300">
+                <span className="pulse-dot h-2 w-2 rounded-full bg-emerald-400" /> {presentToday} hadir hari ini
               </span>
             </div>
           </div>

@@ -792,3 +792,89 @@ export const contractStatusLabel: Record<ContractStatus, string> = {
   segera_berakhir: "Segera Berakhir",
   berakhir: "Berakhir",
 };
+
+export function contractByEmployeeId(id: string): EmployeeContract | undefined {
+  return employeeContracts.find((c) => c.employee.id === id);
+}
+
+export function contractNumber(emp: Employee): string {
+  const client = clientById(emp.clientId);
+  const entity = legalEntities.find((e) => e.id === client?.entityId);
+  const seq = emp.id.split("-")[1].padStart(4, "0");
+  const year = new Date(emp.joinDate).getFullYear();
+  return `KTR/${entity?.invoicePrefix ?? "ABP"}/${year}/${seq}`;
+}
+
+// Ringkasan absensi 30 hari terakhir untuk 1 karyawan (deterministik)
+export function attendanceSummaryFor(empId: string) {
+  const seed = Number(empId.split("-")[1]) || 1;
+  let hadir = 0,
+    izin = 0,
+    sakit = 0,
+    alpha = 0;
+  const days: { day: number; status: "H" | "I" | "S" | "A" }[] = [];
+  for (let d = 1; d <= 30; d++) {
+    const x = Math.abs(Math.sin(seed * (d + 3) * 2.71));
+    let st: "H" | "I" | "S" | "A" = "H";
+    if (x > 0.95) st = "A";
+    else if (x > 0.9) st = "S";
+    else if (x > 0.85) st = "I";
+    if (st === "H") hadir++;
+    else if (st === "I") izin++;
+    else if (st === "S") sakit++;
+    else alpha++;
+    days.push({ day: d, status: st });
+  }
+  return { hadir, izin, sakit, alpha, total: 30, rate: Math.round((hadir / 30) * 100), days };
+}
+
+// ---------- Profil perusahaan (Tentang ABP) ----------
+export const aboutCompany = {
+  name: "PT. Arowana Bintang Perdana",
+  tagline: "Alih Daya · Driver Management · Security Services · General Cleaning · Man Power Supply",
+  since: 2018,
+  about:
+    "PT. Arowana Bintang Perdana berkomitmen menjadi mitra tepat serta memberikan pelayanan terbaik bagi setiap perusahaan dalam segala kebutuhan pengelolaan tenaga kerja dan solusi outsourcing.",
+  visi: "Menjadi perusahaan pelayanan dan pengelolaan di bidang jasa yang berkompeten, kredibel, visioner, dan profesional.",
+  misi: [
+    "Memberikan layanan terbaik bagi semua perusahaan mitra/klien.",
+    "Menjalin kerja sama bisnis yang saling menguntungkan.",
+    "Meningkatkan Sumber Daya Manusia yang kompeten.",
+    "Meningkatkan daya saing perusahaan dalam pengelolaan dan pelayanan jasa.",
+  ],
+  legalitas: [
+    { label: "Nama Perusahaan", value: "PT. Arowana Bintang Perdana" },
+    { label: "Akta Pendirian", value: "Notaris Fidya Rahmawati, S.H., M.Kn. No. 13, 28 Okt 2020" },
+    { label: "SK Kemenkumham", value: "AHU-0076895.AH.01.02 Tahun 2020" },
+    { label: "NPWP Perusahaan", value: "85.967.224.8-435.000" },
+    { label: "Pengukuhan PKP", value: "S-1323PKP/WPJ.22/KP.1303/2018" },
+    { label: "Nomor Induk Berusaha (NIB)", value: "8120117142015" },
+  ],
+  kontak: {
+    alamat: "Ruko The East Point, Jl. Hirup Raya No.13, Mustikasari, Kel. Jatimulya, Kec. Tambun Selatan, Kab. Bekasi 17510",
+    telp: "0822-1373-8583",
+    whatsapp: "0818-4996-89",
+    email: "arowanabintang@gmail.com",
+    website: "www.arowanabintang.co.id",
+  },
+  layanan: [
+    { title: "Alih Daya (Outsourcing)", desc: "Menyalurkan & mengelola tenaga kerja pendukung yang handal sesuai kebutuhan perusahaan." },
+    { title: "Driver Management", desc: "Melatih & mengelola tenaga driver kendaraan kecil, sedang, maupun besar sesuai kualifikasi." },
+    { title: "Security Services", desc: "Menyalurkan & mengelola tenaga Satuan Pengamanan (Satpam) untuk perusahaan & pemukiman." },
+    { title: "General Cleaning", desc: "Pembersihan area kantor, produksi, gudang, halaman, dinding in/outdoor secara berkala/project." },
+    { title: "Man Power Supply", desc: "Menyediakan tenaga kerja terlatih yang siap berkontribusi untuk perusahaan." },
+    { title: "General Supplier", desc: "Pengadaan cleaning equipment, APAR, serta perlengkapan satpam & pengamanan." },
+  ],
+  team: [
+    { name: "Tri Antoro", role: "Director" },
+    { name: "Mariyanti", role: "HR & GA Manager" },
+    { name: "Deo Galuh", role: "Accounting & Finance" },
+    { name: "M. Robby Zainudin", role: "Business Development & Operation Manager" },
+  ],
+  stats: [
+    { label: "Berdiri Sejak", value: "2018" },
+    { label: "Badan Usaha", value: String(legalEntities.length) },
+    { label: "Klien Aktif", value: String(clients.length) },
+    { label: "Tenaga Kerja", value: String(employees.filter((e) => e.status === "aktif").length) },
+  ],
+};

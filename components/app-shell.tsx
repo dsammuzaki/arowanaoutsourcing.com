@@ -18,6 +18,7 @@ import {
   CalendarDays,
   Target,
   FileClock,
+  Info,
   Search,
   Bell,
   LogOut,
@@ -54,7 +55,13 @@ const nav = [
       { href: "/fee", label: "Fee / Komisi", Icon: Handshake },
     ],
   },
-  { group: "Sistem", items: [{ href: "/pengaturan", label: "Pengaturan", Icon: Settings }] },
+  {
+    group: "Sistem",
+    items: [
+      { href: "/about", label: "Tentang ABP", Icon: Info },
+      { href: "/pengaturan", label: "Pengaturan", Icon: Settings },
+    ],
+  },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
@@ -101,7 +108,9 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex items-center gap-3 px-5 py-5">
         <Logo size={38} />
         <div className="leading-tight">
-          <p className="text-sm font-bold text-white">Arowana Bintang</p>
+          <p className="text-[13px] font-bold leading-tight text-white">
+            Arowana Bintang Perdana
+          </p>
           <p className="text-[11px] text-teal-soft">Outsourcing System</p>
         </div>
       </div>

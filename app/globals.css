@@ -100,3 +100,29 @@ body {
     @apply whitespace-nowrap px-4 py-3 text-sm text-foreground;
   }
 }
+
+/* Animated welcome hero — warna teal↔emas bergerak */
+@keyframes heroFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero-anim {
+  background: linear-gradient(120deg, #1a7d9c 0%, #0e4658 28%, #c69a34 52%, #155e63 78%, #1a7d9c 100%);
+  background-size: 300% 300%;
+  animation: heroFlow 14s ease-in-out infinite;
+}
+
+/* Titik kehadiran berkedip hijau redup → hijau */
+@keyframes pulseGreen {
+  0%, 100% { opacity: 0.4; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+  50% { opacity: 1; box-shadow: 0 0 10px 2px rgba(16, 185, 129, 0.65); }
+}
+.pulse-dot {
+  animation: pulseGreen 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-anim { animation: none; }
+  .pulse-dot { animation: none; opacity: 1; }
+}

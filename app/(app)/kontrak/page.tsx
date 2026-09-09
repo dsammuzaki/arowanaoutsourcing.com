@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { PageHeader, Card, Badge, StatusPill, Avatar } from "@/components/ui";
-import { FileClock, AlertTriangle, CheckCircle2, CalendarX2, Search, Download } from "lucide-react";
+import { FileClock, AlertTriangle, CheckCircle2, CalendarX2, Search, Download, ChevronRight } from "lucide-react";
 import {
   employeeContracts,
   kontrakStats,
@@ -114,17 +115,19 @@ export default function KontrakPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((c) => (
-                <tr key={c.employee.id} className="hover:bg-muted/60">
+                <tr key={c.employee.id} className="group cursor-pointer hover:bg-muted/60">
                   <td className="td">
-                    <div className="flex items-center gap-3">
+                    <Link href={`/kontrak/${c.employee.id}`} className="flex items-center gap-3">
                       <Avatar name={c.employee.name} tone={c.status === "berakhir" ? "navy" : "teal"} />
                       <div>
-                        <p className="font-semibold text-foreground">{c.employee.name}</p>
+                        <p className="font-semibold text-foreground group-hover:text-primary">
+                          {c.employee.name}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {c.employee.position} · masa kerja {formatDurasi(c.masaKerjaMonths * 30)}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   </td>
                   <td className="td">
                     <p className="text-muted-foreground">{clientById(c.employee.clientId)?.name}</p>
@@ -160,7 +163,16 @@ export default function KontrakPage() {
                     )}
                   </td>
                   <td className="td">
-                    <StatusPill status={c.status} />
+                    <div className="flex items-center justify-between gap-2">
+                      <StatusPill status={c.status} />
+                      <Link
+                        href={`/kontrak/${c.employee.id}`}
+                        className="text-muted-foreground transition-colors group-hover:text-primary"
+                        aria-label="Lihat detail"
+                      >
+                        <ChevronRight size={16} />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
