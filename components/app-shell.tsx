@@ -5,6 +5,17 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Logo } from "./logo";
+import { createClient } from "@/utils/supabase/client";
+import { initials } from "@/lib/format";
+
+export type ShellUser = { email: string; name: string; role: string } | null;
+
+const roleLabel: Record<string, string> = {
+  super_admin: "Super Admin",
+  operation: "Operation",
+  director: "Director",
+  finance: "Finance",
+};
 import {
   LayoutDashboard,
   Users,
@@ -103,7 +114,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
   );
 }
 
-function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarInner({ onNavigate, onLogout }: { onNavigate?: () => void; onLogout?: () => void }) {
   const pathname = usePathname();
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -118,13 +129,13 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
       </div>
       <NavLinks pathname={pathname} onNavigate={onNavigate} />
       <div className="border-t border-white/10 p-3">
-        <Link
-          href="/"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white"
+        <button
+          onClick={onLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white"
         >
           <LogOut size={18} />
           Keluar
-        </Link>
+        </button>
       </div>
     </div>
   );
@@ -146,14 +157,27 @@ function ThemeToggle() {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, user }: { children: React.ReactNode; user?: ShellUser }) {
   const [open, setOpen] = useState(false);
+
+  async function handleLogout() {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      try {
+        await createClient().auth.signOut();
+      } catch {}
+    }
+    window.location.href = "/";
+  }
+
+  const displayName = user?.name || "Pengguna";
+  const displayRole = user ? roleLabel[user.role] ?? user.role : "Demo";
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 lg:block">
         <div className="fixed h-screen w-64">
-          <SidebarInner />
+          <SidebarInner onLogout={handleLogout} />
         </div>
       </aside>
 
@@ -162,7 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-navy/70" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-64">
-            <SidebarInner onNavigate={() => setOpen(false)} />
+            <SidebarInner onNavigate={() => setOpen(false)} onLogout={handleLogout} />
           </div>
         </div>
       )}
@@ -192,11 +216,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <div className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 hover:bg-muted">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
-                AH
+                {initials(displayName)}
               </div>
               <div className="hidden text-left leading-tight sm:block">
-                <p className="text-sm font-semibold text-foreground">Agus Hidayatulloh</p>
-                <p className="text-[11px] text-muted-foreground">Manager Operation</p>
+                <p className="text-sm font-semibold text-foreground">{displayName}</p>
+                <p className="text-[11px] text-muted-foreground">{displayRole}</p>
               </div>
             </div>
           </div>

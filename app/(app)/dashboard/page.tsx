@@ -42,8 +42,29 @@ import {
   PayrollArea,
 } from "@/components/charts";
 import { rupiah, tanggal, initials } from "@/lib/format";
+import { cookies } from "next/headers";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 
 const k = dashboardKpis;
+
+async function getGreetName(): Promise<string> {
+  if (!isSupabaseConfigured()) return "Tim ABP";
+  try {
+    const supabase = createClient(await cookies());
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return "Tim ABP";
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+    return profile?.full_name || user.email?.split("@")[0] || "Tim ABP";
+  } catch {
+    return "Tim ABP";
+  }
+}
 
 interface Tile {
   label: string;
@@ -204,7 +225,8 @@ function DonutCard({
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const greetName = await getGreetName();
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
@@ -220,7 +242,7 @@ export default function DashboardPage() {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-white/60">Selamat datang kembali,</p>
-            <h2 className="mt-0.5 text-2xl font-bold">Agus Hidayatulloh 👋</h2>
+            <h2 className="mt-0.5 text-2xl font-bold">{greetName} 👋</h2>
             <p className="mt-1 text-sm text-white/60">
               Berikut ringkasan operasional PT. Arowana Bintang Perdana hari ini.
             </p>
