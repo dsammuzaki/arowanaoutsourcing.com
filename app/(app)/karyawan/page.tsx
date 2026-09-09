@@ -1,33 +1,100 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
 import { PageHeader, Card, Badge, StatusPill, Avatar } from "@/components/ui";
-import { IconSearch, IconPlus, IconDownload } from "@/components/icons";
-import { employees, clients, contractTypeLabel } from "@/lib/data";
+import { IconSearch } from "@/components/icons";
+import { KaryawanToolbar, type ExportRow } from "@/components/karyawan-toolbar";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+import { employees as mockEmployees, clients as mockClients, contractTypeLabel } from "@/lib/data";
 import { tanggal } from "@/lib/format";
 
-export default function KaryawanPage() {
-  const aktif = employees.filter((e) => e.status === "aktif").length;
+interface Row {
+  id: string;
+  name: string;
+  nik: string;
+  position: string | null;
+  contract_type: string | null;
+  client_id: string | null;
+  client_name: string;
+  branch: string | null;
+  marital_status: string | null;
+  dependents: number | null;
+  npwp: string | null;
+  bank_name: string | null;
+  bank_account: string | null;
+  join_date: string | null;
+  status: string;
+  photo_url: string | null;
+}
+
+async function getData(): Promise<{ rows: Row[]; clients: { id: string; name: string }[]; source: "db" | "mock" }> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const [{ data: emps }, { data: cls }] = await Promise.all([
+        sb.from("employees").select("*").order("name"),
+        sb.from("clients").select("id,name"),
+      ]);
+      if (emps) {
+        const cmap = Object.fromEntries((cls ?? []).map((c) => [c.id, c.name]));
+        const rows: Row[] = emps.map((e) => ({ ...(e as Row), client_name: cmap[e.client_id as string] ?? "-" }));
+        return { rows, clients: cls ?? [], source: "db" };
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+  const rows: Row[] = mockEmployees.map((e) => ({
+    id: e.id,
+    name: e.name,
+    nik: e.nik,
+    position: e.position,
+    contract_type: e.contractType,
+    client_id: e.clientId,
+    client_name: mockClients.find((c) => c.id === e.clientId)?.name ?? "-",
+    branch: e.branch,
+    marital_status: e.maritalStatus,
+    dependents: e.dependents,
+    npwp: e.npwp,
+    bank_name: e.bankName,
+    bank_account: e.bankAccount,
+    join_date: e.joinDate,
+    status: e.status,
+    photo_url: null,
+  }));
+  return { rows, clients: mockClients.map((c) => ({ id: c.id, name: c.name })), source: "mock" };
+}
+
+export default async function KaryawanPage() {
+  const { rows, clients, source } = await getData();
+  const aktif = rows.filter((e) => e.status === "aktif").length;
   const summary = [
-    { label: "Total Karyawan", value: employees.length },
+    { label: "Total Karyawan", value: rows.length },
     { label: "Aktif", value: aktif },
-    { label: "Keluar", value: employees.length - aktif },
+    { label: "Keluar", value: rows.length - aktif },
     { label: "Klien", value: clients.length },
   ];
+  const exportRows: ExportRow[] = rows.map((r) => ({
+    name: r.name,
+    nik: r.nik,
+    position: r.position ?? "",
+    clientName: r.client_name,
+    branch: r.branch ?? "",
+    npwp: r.npwp ?? "",
+    bank_name: r.bank_name ?? "",
+    bank_account: r.bank_account ?? "",
+    join_date: r.join_date ?? "",
+    status: r.status,
+  }));
 
   return (
     <>
       <PageHeader
         title="Data Induk Karyawan"
-        subtitle="Profil lengkap tenaga kerja — NIK, NPWP, status pajak, dan rekening"
-        actions={
-          <>
-            <button className="btn-outline">
-              <IconDownload width={16} height={16} /> Ekspor
-            </button>
-            <button className="btn-primary">
-              <IconPlus width={16} height={16} /> Tambah Karyawan
-            </button>
-          </>
+        subtitle={
+          source === "db"
+            ? "Tersimpan di database Supabase — NIK, NPWP, status pajak, rekening"
+            : "Mode demo (data contoh) — aktifkan Supabase untuk simpan permanen"
         }
+        actions={<KaryawanToolbar clients={clients} exportRows={exportRows} />}
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -40,14 +107,9 @@ export default function KaryawanPage() {
       </div>
 
       <Card>
-        {/* Filter bar */}
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <IconSearch
-              width={18}
-              height={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
+            <IconSearch width={18} height={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input className="input pl-9" placeholder="Cari nama, NIK, atau jabatan…" />
           </div>
           <select className="input w-full sm:w-48">
@@ -78,61 +140,62 @@ export default function KaryawanPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {employees.map((e) => {
-                const client = clients.find((c) => c.id === e.clientId);
-                return (
-                  <tr key={e.id} className="hover:bg-muted">
-                    <td className="td">
-                      <div className="flex items-center gap-3">
-                        <Avatar name={e.name} />
-                        <div>
-                          <p className="font-semibold text-foreground">{e.name}</p>
-                          <p className="text-xs text-muted-foreground">{e.nik}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="td">
-                      <p>{e.position}</p>
-                      <Badge tone="teal">{contractTypeLabel[e.contractType]}</Badge>
-                    </td>
-                    <td className="td">
-                      <p className="text-muted-foreground">{client?.name}</p>
-                      <p className="text-xs text-muted-foreground">{e.branch}</p>
-                    </td>
-                    <td className="td">
-                      <span className="font-semibold">
-                        {e.maritalStatus}/{e.dependents}
-                      </span>
-                    </td>
-                    <td className="td">
-                      {e.npwp === "-" ? (
-                        <Badge tone="amber">Belum ada</Badge>
+              {rows.map((e) => (
+                <tr key={e.id} className="hover:bg-muted">
+                  <td className="td">
+                    <div className="flex items-center gap-3">
+                      {e.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={e.photo_url} alt={e.name} className="h-9 w-9 rounded-full object-cover" />
                       ) : (
-                        <span className="text-xs text-muted-foreground">{e.npwp}</span>
+                        <Avatar name={e.name} />
                       )}
-                    </td>
-                    <td className="td">
-                      <p className="text-muted-foreground">{e.bankName}</p>
-                      <p className="text-xs text-muted-foreground">{e.bankAccount}</p>
-                    </td>
-                    <td className="td text-muted-foreground">{tanggal(e.joinDate)}</td>
-                    <td className="td">
-                      <StatusPill status={e.status} />
-                    </td>
-                  </tr>
-                );
-              })}
+                      <div>
+                        <p className="font-semibold text-foreground">{e.name}</p>
+                        <p className="text-xs text-muted-foreground">{e.nik}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="td">
+                    <p>{e.position}</p>
+                    {e.contract_type && (
+                      <Badge tone="teal">
+                        {contractTypeLabel[e.contract_type as keyof typeof contractTypeLabel] ?? e.contract_type}
+                      </Badge>
+                    )}
+                  </td>
+                  <td className="td">
+                    <p className="text-muted-foreground">{e.client_name}</p>
+                    <p className="text-xs text-muted-foreground">{e.branch}</p>
+                  </td>
+                  <td className="td">
+                    <span className="font-semibold">
+                      {e.marital_status}/{e.dependents ?? 0}
+                    </span>
+                  </td>
+                  <td className="td">
+                    {!e.npwp || e.npwp === "-" ? (
+                      <Badge tone="amber">Belum ada</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{e.npwp}</span>
+                    )}
+                  </td>
+                  <td className="td">
+                    <p className="text-muted-foreground">{e.bank_name}</p>
+                    <p className="text-xs text-muted-foreground">{e.bank_account}</p>
+                  </td>
+                  <td className="td text-muted-foreground">{e.join_date ? tanggal(e.join_date) : "-"}</td>
+                  <td className="td">
+                    <StatusPill status={e.status} />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-muted-foreground">
-          <span>Menampilkan {employees.length} karyawan</span>
-          <div className="flex gap-1">
-            <button className="btn-ghost px-3 py-1.5">Sebelumnya</button>
-            <button className="btn-outline px-3 py-1.5">1</button>
-            <button className="btn-ghost px-3 py-1.5">Berikutnya</button>
-          </div>
+        <div className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
+          Menampilkan {rows.length} karyawan
         </div>
       </Card>
     </>

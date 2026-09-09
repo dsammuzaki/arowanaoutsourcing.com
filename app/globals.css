@@ -126,3 +126,20 @@ body {
   .hero-anim { animation: none; }
   .pulse-dot { animation: none; opacity: 1; }
 }
+
+/* Cetak: sembunyikan navigasi & tombol, tampilkan konten saja */
+@media print {
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border-color: #ddd !important;
+  }
+}

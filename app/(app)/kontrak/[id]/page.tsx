@@ -26,6 +26,7 @@ import {
   formatDurasi,
 } from "@/lib/data";
 import { rupiah, tanggal, initials } from "@/lib/format";
+import { PrintButton } from "@/components/print-button";
 
 const attColor: Record<string, string> = {
   H: "bg-primary/15 text-primary",
@@ -74,9 +75,9 @@ export default async function KaryawanDetailPage({
         <Link href="/kontrak" className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
           <ArrowLeft size={16} /> Kembali ke Monitoring Kontrak
         </Link>
-        <button className="btn-outline">
+        <PrintButton className="btn-outline">
           <Printer size={16} /> Cetak Profil
-        </button>
+        </PrintButton>
       </div>
 
       {/* Header */}
