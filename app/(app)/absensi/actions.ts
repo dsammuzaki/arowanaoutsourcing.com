@@ -51,6 +51,122 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
   }
 }
 
+const MANAGE_ROLES = ["super_admin", "operation", "director"];
+
+export async function deleteAttendance(id: string): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Supabase belum aktif." };
+  const supabase = createClient(await cookies());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sesi habis." };
+  const { data: p } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (!MANAGE_ROLES.includes(p?.role ?? ""))
+    return { ok: false, error: "Hanya Super Admin / Operation / Director yang boleh menghapus absensi." };
+  if (!hasAdmin()) return { ok: false, error: "Server belum dikonfigurasi." };
+
+  const admin = createAdminClient();
+  // hapus foto selfie (best-effort)
+  try {
+    const { data: row } = await admin.from("attendance").select("selfie_url").eq("id", id).single();
+    const url: string | undefined = row?.selfie_url ?? undefined;
+    if (url) {
+      const marker = "/absensi/";
+      const idx = url.indexOf(marker);
+      if (idx >= 0) await admin.storage.from("absensi").remove([url.slice(idx + marker.length)]);
+    }
+  } catch {
+    /* abaikan */
+  }
+  const { error } = await admin.from("attendance").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/absensi");
+  return { ok: true };
+}
+
+// ---- Rekap harian per bulan (dari absen nyata + cuti disetujui) ----
+export type RecapCell = "" | "H" | "I" | "S" | "C";
+export type RecapRow = { id: string; name: string; position: string; cells: RecapCell[] };
+export type RecapResult = {
+  ok: boolean;
+  error?: string;
+  days: number;
+  rows: RecapRow[];
+  counts: { H: number; I: number; S: number; C: number };
+};
+
+function leaveCode(type: string | null): RecapCell {
+  const t = (type ?? "").toLowerCase();
+  if (t.includes("sakit")) return "S";
+  if (t.includes("izin")) return "I";
+  return "C"; // Tahunan / Penting / Melahirkan / lainnya
+}
+
+export async function getMonthlyRecap(year: number, month: number): Promise<RecapResult> {
+  const empty = { ok: false, days: 30, rows: [], counts: { H: 0, I: 0, S: 0, C: 0 } };
+  if (!isSupabaseConfigured()) return { ...empty, error: "Supabase belum aktif." };
+  const supabase = createClient(await cookies());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ...empty, error: "Sesi habis." };
+
+  const sb = hasAdmin() ? createAdminClient() : supabase;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const mm = String(month).padStart(2, "0");
+  const firstDay = `${year}-${mm}-01`;
+  const lastDay = `${year}-${mm}-${String(daysInMonth).padStart(2, "0")}`;
+  const startIso = `${year}-${mm}-01T00:00:00+07:00`;
+  const end = month === 12 ? { y: year + 1, m: 1 } : { y: year, m: month + 1 };
+  const endIso = `${end.y}-${String(end.m).padStart(2, "0")}-01T00:00:00+07:00`;
+
+  const [{ data: emps }, { data: att }, { data: leaves }] = await Promise.all([
+    sb.from("employees").select("id,name,position").eq("status", "aktif").order("name").limit(80),
+    sb.from("attendance").select("employee_id,created_at,kind").eq("kind", "masuk").gte("created_at", startIso).lt("created_at", endIso),
+    sb.from("leave_applications").select("employee_id,type,start_date,end_date,status").lte("start_date", lastDay).gte("end_date", firstDay),
+  ]);
+
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" });
+  const presence: Record<string, Set<number>> = {};
+  for (const a of att ?? []) {
+    if (!a.employee_id) continue;
+    const s = fmt.format(new Date(a.created_at as string)); // YYYY-MM-DD (WIB)
+    if (s.slice(0, 7) !== `${year}-${mm}`) continue;
+    const day = Number(s.slice(8, 10));
+    (presence[a.employee_id] ||= new Set()).add(day);
+  }
+
+  const leaveMap: Record<string, Record<number, RecapCell>> = {};
+  for (const l of leaves ?? []) {
+    if (!l.employee_id) continue;
+    const st = String(l.status ?? "").toLowerCase();
+    if (st === "ditolak" || st === "pending") continue; // hanya cuti disetujui
+    const code = leaveCode(l.type as string | null);
+    const s = new Date(l.start_date as string);
+    const e = new Date(l.end_date as string);
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+      if (d.getFullYear() === year && d.getMonth() + 1 === month) {
+        (leaveMap[l.employee_id] ||= {})[d.getDate()] = code;
+      }
+    }
+  }
+
+  const counts = { H: 0, I: 0, S: 0, C: 0 };
+  const rows: RecapRow[] = (emps ?? []).map((e) => {
+    const cells: RecapCell[] = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      let cell: RecapCell = "";
+      if (presence[e.id]?.has(day)) cell = "H";
+      else if (leaveMap[e.id]?.[day]) cell = leaveMap[e.id][day];
+      cells.push(cell);
+      if (cell) counts[cell as "H" | "I" | "S" | "C"]++;
+    }
+    return { id: e.id, name: e.name, position: e.position ?? "", cells };
+  });
+
+  return { ok: true, days: daysInMonth, rows, counts };
+}
+
 export async function recordAttendance(
   input: AttendanceInput
 ): Promise<{
