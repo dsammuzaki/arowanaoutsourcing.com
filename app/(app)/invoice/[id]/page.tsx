@@ -1,10 +1,64 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { Card, StatusPill, Badge } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { IconPrint, IconDownload, IconTruck, IconDoc } from "@/components/icons";
-import { invoices, contractTypeLabel } from "@/lib/data";
+import { invoices, legalEntities, contractTypeLabel, type ContractType } from "@/lib/data";
 import { rupiah, tanggal } from "@/lib/format";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+
+type InvoiceView = (typeof invoices)[number];
+
+// Ambil invoice dari database (fallback data contoh).
+async function getInvoice(id: string): Promise<InvoiceView | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const { data: v } = await sb.from("invoices").select("*").eq("id", id).single();
+      if (v) {
+        const { data: c } = v.client_id
+          ? await sb.from("clients").select("*").eq("id", v.client_id).single()
+          : { data: null };
+        const entity =
+          legalEntities.find((e) => e.invoicePrefix === v.entity_prefix) ??
+          legalEntities.find((e) => e.id === c?.entity_id) ??
+          legalEntities[0];
+        const view = {
+          id: v.id,
+          number: v.number,
+          period: v.period ?? "",
+          dueDate: v.due_date ?? "",
+          status: v.status ?? "draft",
+          salarySubtotal: Number(v.salary_subtotal) || 0,
+          bpjsClient: Number(v.bpjs_client) || 0,
+          managementFee: Number(v.management_fee) || 0,
+          dpp: Number(v.dpp) || 0,
+          ppn: Number(v.ppn) || 0,
+          total: Number(v.total) || 0,
+          pph23: Number(v.pph23) || 0,
+          grandTotal: Number(v.grand_total) || 0,
+          entity,
+          client: {
+            id: c?.id ?? "",
+            name: c?.name ?? "-",
+            entityId: c?.entity_id ?? entity.id,
+            contractType: (c?.contract_type ?? "staff") as ContractType,
+            headcount: c?.headcount ?? 0,
+            managementFeePct: Number(c?.management_fee_pct) || 0,
+            ppnPct: Number(c?.ppn_pct) || 12,
+            pph23Pct: Number(c?.pph23_pct) || 2,
+            spkNumber: c?.spk_number ?? "-",
+          },
+        };
+        return view as unknown as InvoiceView;
+      }
+    } catch {
+      /* fallback ke data contoh */
+    }
+  }
+  return invoices.find((i) => i.id === id) ?? null;
+}
 
 export default async function InvoiceDetailPage({
   params,
@@ -12,7 +66,7 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const inv = invoices.find((i) => i.id === id);
+  const inv = await getInvoice(id);
   if (!inv) notFound();
 
   const Row = ({
