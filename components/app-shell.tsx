@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { Logo } from "./logo";
 import { createClient } from "@/utils/supabase/client";
 import { initials } from "@/lib/format";
+import { OnboardingQuest } from "./onboarding-quest";
 
 export type ShellUser = { email: string; name: string; role: string } | null;
 
@@ -230,6 +231,8 @@ export function AppShell({ children, user }: { children: React.ReactNode; user?:
           {children}
         </main>
       </div>
+
+      <OnboardingQuest />
     </div>
   );
 }
