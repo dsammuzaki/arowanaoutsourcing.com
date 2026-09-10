@@ -14,6 +14,9 @@ import {
   Check,
   X as XIcon,
   Send,
+  Table2,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Modal } from "./modal";
 import type {
@@ -27,8 +30,8 @@ import type {
 import { priorityMeta, approvalMeta } from "@/lib/data";
 import { tanggal, initials } from "@/lib/format";
 
-const APPROVERS = ["Tri Antoro", "Mariyanti", "Deo Galuh"];
-const ASSIGNEES = ["Mariyanti", "Deo Galuh", "Tri Antoro", "Rina Firmansyah"];
+const APPROVERS = ["Zaenudin ZAI", "Agus Hidayatulloh", "Rifal Riyadi"];
+const ASSIGNEES = ["Agus Hidayatulloh", "Rifal Riyadi", "Masturoh HS, S.Pd.I", "Zaenudin ZAI"];
 
 export function KanbanBoard({
   columns,
@@ -43,7 +46,7 @@ export function KanbanBoard({
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
-  const [view, setView] = useState<"papan" | "harian">("papan");
+  const [view, setView] = useState<"tabel" | "papan" | "harian">("tabel");
   const [filter, setFilter] = useState<string>("all");
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<KanbanColKey | null>(null);
@@ -85,6 +88,14 @@ export function KanbanBoard({
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
           <button
+            onClick={() => setView("tabel")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${
+              view === "tabel" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Table2 size={16} /> Tabel
+          </button>
+          <button
             onClick={() => setView("papan")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${
               view === "papan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
@@ -116,7 +127,15 @@ export function KanbanBoard({
         </div>
       </div>
 
-      {view === "papan" ? (
+      {view === "tabel" ? (
+        <TableView
+          columns={columns}
+          tasks={visible}
+          groups={groups.filter((g) => filter === "all" || g.id === filter)}
+          onOpen={setDetailId}
+          onStatus={(id, col) => moveTask(id, col)}
+        />
+      ) : view === "papan" ? (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {columns.map((col) => {
             const colTasks = visible.filter((t) => t.column === col.key);
@@ -349,6 +368,157 @@ export function KanbanBoard({
         }}
       />
     </>
+  );
+}
+
+// ---- Tampilan Tabel ala monday.com: dikelompokkan per proyek ----
+function TableView({
+  columns,
+  tasks,
+  groups,
+  onOpen,
+  onStatus,
+}: {
+  columns: KanbanColumn[];
+  tasks: ProjectTask[];
+  groups: ProjectGroup[];
+  onOpen: (id: string) => void;
+  onStatus: (id: string, col: KanbanColKey) => void;
+}) {
+  const colMap = useMemo(() => Object.fromEntries(columns.map((c) => [c.key, c])), [columns]);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const groupsWithTasks = groups
+    .map((g) => ({ group: g, items: tasks.filter((t) => t.projectId === g.id) }))
+    .filter((x) => x.items.length > 0);
+
+  if (groupsWithTasks.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
+        Belum ada tugas. Klik <span className="font-semibold text-foreground">+ Tugas</span> untuk menambah.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {groupsWithTasks.map(({ group, items }) => {
+        const isCollapsed = collapsed[group.id];
+        // distribusi status untuk bar ringkasan
+        const dist = columns
+          .map((c) => ({ c, n: items.filter((t) => t.column === c.key).length }))
+          .filter((x) => x.n > 0);
+        const dues = items.map((t) => t.due).filter(Boolean).sort();
+        const dueRange =
+          dues.length > 0
+            ? dues[0] === dues[dues.length - 1]
+              ? tanggal(dues[0])
+              : `${tanggal(dues[0])} – ${tanggal(dues[dues.length - 1])}`
+            : "—";
+
+        return (
+          <div key={group.id} className="overflow-hidden">
+            {/* Header grup */}
+            <button
+              onClick={() => setCollapsed((c) => ({ ...c, [group.id]: !c[group.id] }))}
+              className="mb-1 flex items-center gap-2 text-left"
+              style={{ color: group.color }}
+            >
+              {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+              <span className="text-base font-bold">{group.name}</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                {items.length}
+              </span>
+            </button>
+
+            {!isCollapsed && (
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full min-w-[640px] border-collapse">
+                  <thead>
+                    <tr className="bg-muted/60">
+                      <th className="w-1 p-0" style={{ background: group.color }} />
+                      <th className="th">Tugas</th>
+                      <th className="th w-24 text-center">Owner</th>
+                      <th className="th w-44 text-center">Status</th>
+                      <th className="th w-36 text-center">Tenggat</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {items.map((t) => {
+                      const col = colMap[t.column];
+                      return (
+                        <tr key={t.id} className="group bg-card hover:bg-muted/40">
+                          <td className="w-1 p-0" style={{ background: group.color }} />
+                          <td className="td">
+                            <button onClick={() => onOpen(t.id)} className="text-left">
+                              <span className="font-medium text-foreground group-hover:text-primary">{t.title}</span>
+                              <span className={`ml-2 badge ${priorityMeta[t.priority].cls}`}>
+                                <Flag size={10} /> {priorityMeta[t.priority].label}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="td text-center">
+                            <span
+                              className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white"
+                              title={t.assignee}
+                            >
+                              {initials(t.assignee)}
+                            </span>
+                          </td>
+                          <td className="p-1 text-center align-middle">
+                            <div className="relative">
+                              <select
+                                value={t.column}
+                                onChange={(e) => onStatus(t.id, e.target.value as KanbanColKey)}
+                                className="w-full cursor-pointer appearance-none rounded-md border-0 px-2 py-2 text-center text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                style={{ background: col?.color ?? "#64748b" }}
+                              >
+                                {columns.map((c) => (
+                                  <option key={c.key} value={c.key} className="bg-card text-foreground">
+                                    {c.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </td>
+                          <td className="td text-center text-muted-foreground">
+                            {t.due ? tanggal(t.due) : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {/* Baris ringkasan (battery ala monday.com) */}
+                  <tfoot>
+                    <tr className="bg-muted/40">
+                      <td className="w-1 p-0" style={{ background: group.color }} />
+                      <td className="td text-xs text-muted-foreground">Ringkasan {items.length} tugas</td>
+                      <td className="td" />
+                      <td className="p-2">
+                        <div className="flex h-5 w-full overflow-hidden rounded-full">
+                          {dist.map(({ c, n }) => (
+                            <span
+                              key={c.key}
+                              title={`${c.label}: ${n}`}
+                              style={{ background: c.color, width: `${(n / items.length) * 100}%` }}
+                            />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="p-2 text-center">
+                        <span className="inline-block rounded-full bg-primary/15 px-3 py-1 text-[11px] font-semibold text-primary">
+                          {dueRange}
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
