@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { PageHeader, Card, Badge, StatusPill, Avatar } from "@/components/ui";
 import { IconSearch } from "@/components/icons";
@@ -143,7 +144,7 @@ export default async function KaryawanPage() {
               {rows.map((e) => (
                 <tr key={e.id} className="hover:bg-muted">
                   <td className="td">
-                    <div className="flex items-center gap-3">
+                    <Link href={`/kontrak/${e.id}`} className="group flex items-center gap-3">
                       {e.photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={e.photo_url} alt={e.name} className="h-9 w-9 rounded-full object-cover" />
@@ -151,10 +152,12 @@ export default async function KaryawanPage() {
                         <Avatar name={e.name} />
                       )}
                       <div>
-                        <p className="font-semibold text-foreground">{e.name}</p>
+                        <p className="font-semibold text-foreground group-hover:text-primary group-hover:underline">
+                          {e.name}
+                        </p>
                         <p className="text-xs text-muted-foreground">{e.nik}</p>
                       </div>
-                    </div>
+                    </Link>
                   </td>
                   <td className="td">
                     <p>{e.position}</p>

@@ -767,6 +767,37 @@ export const employeeContracts: EmployeeContract[] = employees
     };
   });
 
+// Bangun objek kontrak (untuk karyawan dari database) berdasarkan tanggal mulai/berakhir.
+export function deriveContract(
+  emp: Employee,
+  startIso?: string | null,
+  endIso?: string | null,
+  termMonths = 12
+): EmployeeContract {
+  const start = startIso || emp.joinDate || REF_DATE;
+  const end = endIso || addMonths(start, termMonths);
+  const totalDays = Math.max(1, daysBetween(start, end));
+  const elapsedDays = Math.min(Math.max(0, daysBetween(start, REF_DATE)), totalDays);
+  const remainingDays = daysBetween(REF_DATE, end);
+  const progressPct = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
+  const masaKerjaMonths = Math.max(0, Math.round(daysBetween(emp.joinDate || REF_DATE, REF_DATE) / 30));
+  const status: ContractStatus =
+    remainingDays < 0 ? "berakhir" : remainingDays <= SOON_THRESHOLD_DAYS ? "segera_berakhir" : "aktif";
+  return {
+    employee: emp,
+    contractType: emp.contractType,
+    termMonths,
+    start,
+    end,
+    totalDays,
+    elapsedDays,
+    remainingDays,
+    progressPct,
+    masaKerjaMonths,
+    status,
+  };
+}
+
 export function formatDurasi(days: number): string {
   const abs = Math.abs(days);
   const years = Math.floor(abs / 365);

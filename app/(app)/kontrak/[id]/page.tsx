@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { Card, Badge, StatusPill } from "@/components/ui";
 import {
   ArrowLeft,
@@ -24,9 +25,64 @@ import {
   legalEntities,
   contractTypeLabel,
   formatDurasi,
+  deriveContract,
+  type Employee,
+  type EmployeeContract,
+  type ContractType,
 } from "@/lib/data";
 import { rupiah, tanggal, initials } from "@/lib/format";
 import { PrintButton } from "@/components/print-button";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+
+// Ambil karyawan + kontrak: coba database dulu, lalu fallback data contoh.
+async function getEmployee(
+  id: string
+): Promise<{ emp: Employee; contract: EmployeeContract | undefined } | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const { data: e } = await sb.from("employees").select("*").eq("id", id).single();
+      if (e) {
+        const emp: Employee = {
+          id: e.id,
+          nik: e.nik ?? "-",
+          name: e.name,
+          gender: e.gender === "P" ? "P" : "L",
+          position: e.position ?? "-",
+          clientId: e.client_id ?? "",
+          contractType: (e.contract_type ?? "staff") as ContractType,
+          branch: e.branch ?? "-",
+          maritalStatus: e.marital_status === "K" ? "K" : "TK",
+          dependents: e.dependents ?? 0,
+          npwp: e.npwp ?? "-",
+          bankName: e.bank_name ?? "-",
+          bankAccount: e.bank_account ?? "-",
+          joinDate: e.join_date ?? "2024-01-01",
+          exitDate: e.exit_date ?? null,
+          basicSalary: Number(e.basic_salary) || 0,
+          status: e.status === "keluar" ? "keluar" : "aktif",
+        };
+        const { data: c } = await sb
+          .from("contracts")
+          .select("*")
+          .eq("employee_id", id)
+          .order("start_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const contract =
+          emp.status === "aktif"
+            ? deriveContract(emp, c?.start_date, c?.end_date, c?.term_months ?? 12)
+            : undefined;
+        return { emp, contract };
+      }
+    } catch {
+      /* fallback ke data contoh */
+    }
+  }
+  const emp = employeeById(id);
+  if (!emp) return null;
+  return { emp, contract: contractByEmployeeId(id) };
+}
 
 const attColor: Record<string, string> = {
   H: "bg-primary/15 text-primary",
@@ -41,9 +97,9 @@ export default async function KaryawanDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const emp = employeeById(id);
-  if (!emp) notFound();
-  const contract = contractByEmployeeId(id);
+  const found = await getEmployee(id);
+  if (!found) notFound();
+  const { emp, contract } = found;
   const client = clientById(emp.clientId);
   const entity = legalEntities.find((e) => e.id === client?.entityId);
   const att = attendanceSummaryFor(id);
