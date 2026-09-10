@@ -1,4 +1,4 @@
-import { PageHeader, Card, Badge, Avatar } from "@/components/ui";
+import { PageHeader, Card, Badge } from "@/components/ui";
 import { Briefcase, Users, CalendarClock, UserCheck } from "lucide-react";
 import {
   jobPostings,
@@ -13,6 +13,7 @@ import { cookies } from "next/headers";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { BuatLowonganButton } from "@/components/create-forms";
 import { JobTable, type JobRow } from "@/components/job-table";
+import { CandidatePipeline } from "@/components/candidate-pipeline";
 import { clients as mockClients } from "@/lib/data";
 
 async function getJobs(): Promise<{ jobs: JobRow[]; clientList: { id: string; name: string }[]; clientMap: Record<string, string> }> {
@@ -37,14 +38,6 @@ async function getJobs(): Promise<{ jobs: JobRow[]; clientList: { id: string; na
   const clientMap = Object.fromEntries(clientList.map((c) => [c.id, c.name]));
   return { jobs, clientList, clientMap };
 }
-
-const stageTone: Record<string, string> = {
-  Pelamar: "slate",
-  Skrining: "amber",
-  Interview: "teal",
-  Penawaran: "gold",
-  Diterima: "green",
-};
 
 export default async function RekrutmenPage() {
   const { jobs, clientList, clientMap } = await getJobs();
@@ -76,48 +69,20 @@ export default async function RekrutmenPage() {
         ))}
       </div>
 
-      {/* Candidate pipeline — horizontal-scroll kanban on small screens, grid on wide */}
+      {/* Candidate pipeline — dapat diedit & drag antar tahap */}
       <Card className="mb-6 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-bold text-foreground">Pipeline Kandidat</h2>
-          <span className="text-xs text-muted-foreground xl:hidden">Geser →</span>
-        </div>
-        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 xl:mx-0 xl:grid xl:grid-cols-5 xl:overflow-visible xl:px-0 xl:pb-0">
-          {candidateStages.map((stage) => {
-            const list = candidates.filter((c) => c.stage === stage);
-            return (
-              <div
-                key={stage}
-                className="w-[78%] shrink-0 snap-start rounded-lg bg-muted/60 p-3 sm:w-[300px] xl:w-auto xl:shrink"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">{stage}</span>
-                  <Badge tone={stageTone[stage]}>{list.length}</Badge>
-                </div>
-                <div className="space-y-2">
-                  {list.map((c) => (
-                    <div key={c.id} className="rounded-lg border border-border bg-card p-2.5 shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <Avatar name={c.name} />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">{c.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{c.position}</p>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{c.source}</span>
-                        <span className="font-semibold text-primary">Skor {c.score}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {list.length === 0 && (
-                    <p className="py-4 text-center text-xs text-muted-foreground">—</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <CandidatePipeline
+          stages={candidateStages}
+          candidates={candidates.map((c) => ({
+            id: c.id,
+            name: c.name,
+            position: c.position,
+            source: c.source,
+            score: c.score,
+            stage: c.stage,
+          }))}
+          positions={Array.from(new Set(jobPostings.map((j) => j.title)))}
+        />
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -1,5 +1,5 @@
-import { PageHeader, Card, Badge, StatusPill, Avatar } from "@/components/ui";
-import { Gauge, Target, ClipboardCheck, Award, Plus } from "lucide-react";
+import { PageHeader, Card, StatusPill } from "@/components/ui";
+import { Gauge, Target, ClipboardCheck, Award } from "lucide-react";
 import {
   goals,
   reviewCycles,
@@ -7,8 +7,9 @@ import {
   awards,
   kinerjaStats,
   employeeById,
+  employees,
 } from "@/lib/data";
-import { tanggal } from "@/lib/format";
+import { KinerjaGoals, type GoalDTO } from "@/components/kinerja-goals";
 
 function scoreTone(v: number) {
   if (v >= 85) return "text-emerald-600";
@@ -20,6 +21,15 @@ function barColor(v: number) {
   if (v >= 60) return "#c69a34";
   return "#c0392b";
 }
+
+const goalDtos: GoalDTO[] = goals.map((g) => ({
+  id: g.id,
+  title: g.title,
+  employeeName: employeeById(g.employeeId)?.name ?? "?",
+  due: g.due,
+  progress: g.progress,
+}));
+const empNames = employees.filter((e) => e.status === "aktif").map((e) => e.name);
 
 export default function KinerjaPage() {
   const stats = [
@@ -33,11 +43,6 @@ export default function KinerjaPage() {
       <PageHeader
         title="Kinerja & KPI"
         subtitle="Goal karyawan, siklus review, indikator KPI, dan penghargaan"
-        actions={
-          <button className="btn-primary">
-            <Plus size={16} /> Buat Goal
-          </button>
-        }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -104,36 +109,7 @@ export default function KinerjaPage() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Goals */}
         <Card className="overflow-hidden lg:col-span-2">
-          <div className="border-b border-border px-5 py-4">
-            <h2 className="font-bold text-foreground">Goal Karyawan</h2>
-          </div>
-          <div className="divide-y divide-border">
-            {goals.map((g) => {
-              const emp = employeeById(g.employeeId);
-              return (
-                <div key={g.id} className="px-5 py-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={emp?.name ?? "?"} />
-                      <div>
-                        <p className="font-semibold text-foreground">{g.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {emp?.name} · tenggat {tanggal(g.due)}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`text-sm font-bold ${scoreTone(g.progress)}`}>{g.progress}%</span>
-                  </div>
-                  <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${g.progress}%`, background: barColor(g.progress) }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <KinerjaGoals goals={goalDtos} employees={empNames} />
         </Card>
 
         {/* Awards */}

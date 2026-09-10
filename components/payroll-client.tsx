@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, Badge, Avatar } from "@/components/ui";
-import { IconWallet, IconDoc, IconCheck } from "@/components/icons";
-import { CalendarDays, Users, Building2 } from "lucide-react";
+import { IconWallet, IconCheck } from "@/components/icons";
+import { CalendarDays, Users, Building2, Download } from "lucide-react";
 import { rupiah } from "@/lib/format";
 
 export type PayrollLineDTO = {
@@ -60,6 +60,7 @@ export function PayrollClient({
   const [employeeId, setEmployeeId] = useState("all");
   const [daysWorked, setDaysWorked] = useState<Record<string, number>>({});
 
+  const [finalized, setFinalized] = useState(false);
   const period = periods.find((p) => p.key === periodKey) ?? periods[7];
   const daysInMonth = period.days;
 
@@ -97,6 +98,37 @@ export function PayrollClient({
     { label: "Total BPJS (karyawan)", value: rupiah(totals.bpjs, { compact: true }) },
     { label: "Total Take-Home", value: rupiah(totals.thp, { compact: true }) },
   ];
+
+  function exportPayrollCsv() {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const head = ["Nama", "Klien", "Kontrak", "Hari Kerja", "Bruto", "BPJS", "PPh21", "TakeHome", "Metode"];
+    const body = filtered.map((l) =>
+      [
+        l.name,
+        l.clientName,
+        l.contractLabel,
+        `${effDays(l.id)}/${daysInMonth}`,
+        prorate(l.gross, l.id),
+        prorate(l.bpjs, l.id),
+        prorate(l.pph21, l.id),
+        prorate(l.takeHome, l.id),
+        l.method,
+      ]
+        .map(esc)
+        .join(",")
+    );
+    const blob = new Blob(["﻿" + head.map(esc).join(",") + "\n" + body.join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `payroll-${period.label.replace(" ", "-").toLowerCase()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   // Karyawan sesuai filter proyek (untuk dropdown karyawan)
   const empOptions = lines.filter((l) => projectId === "all" || l.clientId === projectId);
@@ -158,11 +190,18 @@ export function PayrollClient({
           </select>
         </div>
         <div className="flex gap-2">
-          <button className="btn-outline whitespace-nowrap">
-            <IconDoc width={16} height={16} /> Slip Massal
+          <button className="btn-outline whitespace-nowrap" onClick={exportPayrollCsv}>
+            <Download size={16} /> Slip Massal (.csv)
           </button>
-          <button className="btn-primary whitespace-nowrap">
-            <IconCheck width={16} height={16} /> Finalisasi
+          <button
+            className={`btn-primary whitespace-nowrap ${finalized ? "opacity-70" : ""}`}
+            onClick={() => {
+              if (finalized) return;
+              if (confirm(`Finalisasi payroll ${period.label} untuk ${filtered.length} karyawan? Nilai akan dikunci.`))
+                setFinalized(true);
+            }}
+          >
+            <IconCheck width={16} height={16} /> {finalized ? "Terfinalisasi" : "Finalisasi"}
           </button>
         </div>
       </Card>

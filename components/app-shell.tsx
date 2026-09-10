@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 import { initials } from "@/lib/format";
 import { OnboardingQuest } from "./onboarding-quest";
 import { NotificationsBell } from "./notifications-bell";
+import { GlobalSearch, type SearchItem } from "./global-search";
 
 export type ShellUser = { email: string; name: string; role: string } | null;
 
@@ -34,7 +35,6 @@ import {
   Info,
   SquareKanban,
   ShieldCheck,
-  Search,
   LogOut,
   Menu,
   X,
@@ -184,7 +184,15 @@ function ThemeToggle() {
   );
 }
 
-export function AppShell({ children, user }: { children: React.ReactNode; user?: ShellUser }) {
+export function AppShell({
+  children,
+  user,
+  searchIndex = [],
+}: {
+  children: React.ReactNode;
+  user?: ShellUser;
+  searchIndex?: SearchItem[];
+}) {
   const [open, setOpen] = useState(false);
 
   async function handleLogout() {
@@ -228,13 +236,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user?:
           >
             <Menu size={20} />
           </button>
-          <div className="relative hidden max-w-md flex-1 sm:block">
-            <Search
-              size={18}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <input className="input pl-9" placeholder="Cari karyawan, klien, invoice…" />
-          </div>
+          <GlobalSearch index={searchIndex} className="hidden max-w-md flex-1 sm:block" />
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle />
             <NotificationsBell />
