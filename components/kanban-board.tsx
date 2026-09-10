@@ -447,15 +447,19 @@ function TableView({
                     {items.map((t) => {
                       const col = colMap[t.column];
                       return (
-                        <tr key={t.id} className="group bg-card hover:bg-muted/40">
+                        <tr
+                          key={t.id}
+                          onClick={() => onOpen(t.id)}
+                          className="group cursor-pointer bg-card hover:bg-muted/40"
+                        >
                           <td className="w-1 p-0" style={{ background: group.color }} />
                           <td className="td">
-                            <button onClick={() => onOpen(t.id)} className="text-left">
-                              <span className="font-medium text-foreground group-hover:text-primary">{t.title}</span>
-                              <span className={`ml-2 badge ${priorityMeta[t.priority].cls}`}>
-                                <Flag size={10} /> {priorityMeta[t.priority].label}
-                              </span>
-                            </button>
+                            <span className="font-medium text-foreground group-hover:text-primary group-hover:underline">
+                              {t.title}
+                            </span>
+                            <span className={`ml-2 badge ${priorityMeta[t.priority].cls}`}>
+                              <Flag size={10} /> {priorityMeta[t.priority].label}
+                            </span>
                           </td>
                           <td className="td text-center">
                             <span
@@ -465,13 +469,14 @@ function TableView({
                               {initials(t.assignee)}
                             </span>
                           </td>
-                          <td className="p-1 text-center align-middle">
+                          <td className="p-1 text-center align-middle" onClick={(e) => e.stopPropagation()}>
                             <div className="relative">
                               <select
                                 value={t.column}
                                 onChange={(e) => onStatus(t.id, e.target.value as KanbanColKey)}
                                 className="w-full cursor-pointer appearance-none rounded-md border-0 px-2 py-2 text-center text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                                 style={{ background: col?.color ?? "#64748b" }}
+                                title="Ubah status"
                               >
                                 {columns.map((c) => (
                                   <option key={c.key} value={c.key} className="bg-card text-foreground">

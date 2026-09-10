@@ -1,6 +1,7 @@
 import { PageHeader, Card, Badge } from "@/components/ui";
 import { IconClock, IconDownload } from "@/components/icons";
 import { employees, clients, attendanceSummary } from "@/lib/data";
+import { LiveAttendance } from "@/components/live-attendance";
 
 type Status = "H" | "I" | "S" | "C" | "A";
 const statusMeta: Record<Status, { label: string; cls: string }> = {
@@ -49,6 +50,8 @@ export default function AbsensiPage() {
           </>
         }
       />
+
+      <LiveAttendance />
 
       <div className="mb-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {cards.map((c) => (

@@ -147,7 +147,7 @@ body {
 /* Cetak: sembunyikan navigasi & tombol, tampilkan konten saja — output A4 rapi */
 @page {
   size: A4;
-  margin: 12mm 12mm 14mm 12mm;
+  margin: 18mm 16mm 20mm 16mm;
 }
 @media print {
   :root {
@@ -220,8 +220,11 @@ body {
     max-height: none !important;
     overflow: visible !important;
     margin: 0 !important;
-    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
+  }
+  /* Sembunyikan tombol/aksi di dalam dokumen yang dicetak */
+  body.print-one [data-print-target] .no-print {
+    display: none !important;
   }
 }

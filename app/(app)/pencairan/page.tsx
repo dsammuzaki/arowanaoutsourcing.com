@@ -1,7 +1,11 @@
 import { PageHeader, Card, Badge } from "@/components/ui";
-import { IconBank, IconWallet, IconDownload, IconCheck, IconPrint } from "@/components/icons";
+import { IconBank, IconWallet, IconCheck, IconPrint } from "@/components/icons";
+import { Logo } from "@/components/logo";
 import { employees, calcPayroll } from "@/lib/data";
 import { rupiah } from "@/lib/format";
+import { ExportButton } from "@/components/export-button";
+import { PrintButton } from "@/components/print-button";
+import { ProsesPencairanButton } from "@/components/pencairan-actions";
 
 const lines = employees.filter((e) => e.status === "aktif").map((e) => calcPayroll(e));
 const transfer = lines.filter((l) => l.method === "transfer");
@@ -25,11 +29,7 @@ export default function PencairanPage() {
       <PageHeader
         title="Pencairan Gaji"
         subtitle="Batch transfer bank & pembayaran tunai — Periode Agustus 2026"
-        actions={
-          <button className="btn-primary">
-            <IconCheck width={16} height={16} /> Proses Pencairan
-          </button>
-        }
+        actions={<ProsesPencairanButton />}
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -72,9 +72,23 @@ export default function PencairanPage() {
               <h2 className="font-bold text-foreground">Batch Transfer per Bank</h2>
               <p className="text-xs text-muted-foreground">Siap unggah ke internet banking</p>
             </div>
-            <button className="btn-outline px-3 py-1.5 text-xs">
-              <IconDownload width={14} height={14} /> Unduh .csv
-            </button>
+            <ExportButton
+              className="btn-outline px-3 py-1.5 text-xs"
+              label="Unduh .csv"
+              filename="batch-transfer-bank.csv"
+              columns={[
+                { key: "nama", label: "Nama" },
+                { key: "bank", label: "Bank" },
+                { key: "rekening", label: "No. Rekening" },
+                { key: "jumlah", label: "Jumlah (Rp)" },
+              ]}
+              rows={transfer.map((l) => ({
+                nama: l.employee.name,
+                bank: l.employee.bankName,
+                rekening: l.employee.bankAccount,
+                jumlah: l.takeHome,
+              }))}
+            />
           </div>
           <div className="divide-y divide-border">
             {Object.entries(byBank).map(([bank, d]) => (
@@ -98,15 +112,23 @@ export default function PencairanPage() {
         </Card>
 
         {/* Cash receipts / Tanda Terima */}
-        <Card className="overflow-hidden">
+        <Card id="doc-tanda-terima" className="overflow-hidden">
+          {/* Kop cetak */}
+          <div className="hidden items-center gap-3 border-b-2 border-navy px-5 py-4 print:flex">
+            <Logo size={40} />
+            <div>
+              <p className="text-base font-bold text-navy">PT. Arowana Bintang Perdana</p>
+              <p className="text-[11px] text-gray-500">Tanda Terima Pembayaran Gaji Tunai · Periode Agustus 2026</p>
+            </div>
+          </div>
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div>
               <h2 className="font-bold text-foreground">Tanda Terima Tunai</h2>
               <p className="text-xs text-muted-foreground">Bukti serah terima bertanda tangan</p>
             </div>
-            <button className="btn-outline px-3 py-1.5 text-xs">
+            <PrintButton className="btn-outline px-3 py-1.5 text-xs" targetId="doc-tanda-terima">
               <IconPrint width={14} height={14} /> Cetak Semua
-            </button>
+            </PrintButton>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
