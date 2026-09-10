@@ -1,5 +1,5 @@
-import { PageHeader, Card, Badge, StatusPill, Avatar } from "@/components/ui";
-import { Briefcase, Users, CalendarClock, UserCheck, Plus, MapPin } from "lucide-react";
+import { PageHeader, Card, Badge, Avatar } from "@/components/ui";
+import { Briefcase, Users, CalendarClock, UserCheck } from "lucide-react";
 import {
   jobPostings,
   candidates,
@@ -7,16 +7,13 @@ import {
   interviews,
   onboardingChecklist,
   recruitmentStats,
-  clientById,
-  contractTypeLabel,
 } from "@/lib/data";
 import { tglParts } from "@/lib/format";
 import { cookies } from "next/headers";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { BuatLowonganButton } from "@/components/create-forms";
+import { JobTable, type JobRow } from "@/components/job-table";
 import { clients as mockClients } from "@/lib/data";
-
-type JobRow = { id: string; title: string; client_id: string | null; type: string | null; location: string | null; applicants: number; target: number; status: string };
 
 async function getJobs(): Promise<{ jobs: JobRow[]; clientList: { id: string; name: string }[]; clientMap: Record<string, string> }> {
   let clientList = mockClients.map((c) => ({ id: c.id, name: c.name }));
@@ -126,53 +123,11 @@ export default async function RekrutmenPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Job postings */}
         <Card className="overflow-hidden lg:col-span-2">
-          <div className="border-b border-border px-5 py-4">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <h2 className="font-bold text-foreground">Lowongan</h2>
+            <span className="text-xs text-muted-foreground">Klik baris untuk detail</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="th">Posisi</th>
-                  <th className="th">Klien</th>
-                  <th className="th">Lokasi</th>
-                  <th className="th text-right">Pelamar</th>
-                  <th className="th text-right">Target</th>
-                  <th className="th">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {jobs.length === 0 && (
-                  <tr>
-                    <td className="td text-muted-foreground" colSpan={6}>Belum ada lowongan.</td>
-                  </tr>
-                )}
-                {jobs.map((j) => (
-                  <tr key={j.id} className="hover:bg-muted">
-                    <td className="td">
-                      <p className="font-semibold text-foreground">{j.title}</p>
-                      {j.type && (
-                        <Badge tone="teal">
-                          {contractTypeLabel[j.type as keyof typeof contractTypeLabel] ?? j.type}
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="td text-muted-foreground">{j.client_id ? clientMap[j.client_id] : "-"}</td>
-                    <td className="td">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground">
-                        <MapPin size={13} /> {j.location}
-                      </span>
-                    </td>
-                    <td className="td text-right font-semibold">{j.applicants}</td>
-                    <td className="td text-right text-muted-foreground">{j.target}</td>
-                    <td className="td">
-                      <StatusPill status={j.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <JobTable jobs={jobs} clientMap={clientMap} />
         </Card>
 
         {/* Side: interviews + onboarding */}

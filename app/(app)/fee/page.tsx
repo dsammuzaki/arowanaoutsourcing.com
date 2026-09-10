@@ -1,12 +1,11 @@
 import { cookies } from "next/headers";
-import { PageHeader, Card, StatusPill, Avatar } from "@/components/ui";
+import { PageHeader, Card } from "@/components/ui";
 import { IconHandshake } from "@/components/icons";
 import { CatatFeeButton } from "@/components/create-forms";
+import { FeeTable, type FeeRow } from "@/components/fee-table";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { referralFees as mockFees, clients as mockClients } from "@/lib/data";
 import { rupiah } from "@/lib/format";
-
-type FeeRow = { id: string; recipient: string; clientName: string; base: number; feePct: number; total: number; status: string };
 
 async function getData(): Promise<{ rows: FeeRow[]; clients: { id: string; name: string }[] }> {
   if (isSupabaseConfigured()) {
@@ -81,47 +80,11 @@ export default async function FeePage() {
       </div>
 
       <Card className="overflow-hidden">
-        <div className="border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="font-bold text-foreground">Riwayat Fee / Komisi</h2>
+          <span className="text-xs text-muted-foreground">Klik baris untuk detail</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted">
-              <tr>
-                <th className="th">Penerima</th>
-                <th className="th">Kontrak / Klien</th>
-                <th className="th text-right">Dasar (MF neto)</th>
-                <th className="th text-right">Persentase</th>
-                <th className="th text-right">Total Fee</th>
-                <th className="th">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.length === 0 && (
-                <tr>
-                  <td className="td text-muted-foreground" colSpan={6}>Belum ada catatan fee.</td>
-                </tr>
-              )}
-              {rows.map((f) => (
-                <tr key={f.id} className="hover:bg-muted">
-                  <td className="td">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={f.recipient} tone="navy" />
-                      <span className="font-semibold text-foreground">{f.recipient}</span>
-                    </div>
-                  </td>
-                  <td className="td text-muted-foreground">{f.clientName}</td>
-                  <td className="td text-right text-muted-foreground">{rupiah(f.base)}</td>
-                  <td className="td text-right font-semibold">{f.feePct}%</td>
-                  <td className="td text-right font-semibold text-foreground">{rupiah(f.total)}</td>
-                  <td className="td">
-                    <StatusPill status={f.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <FeeTable rows={rows} />
         <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
           Rumus: <span className="font-semibold text-foreground">Fee = (Management Fee − PPh 23) × persentase</span>.
         </p>
