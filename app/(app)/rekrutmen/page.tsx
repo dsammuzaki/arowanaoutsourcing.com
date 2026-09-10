@@ -11,6 +11,35 @@ import {
   contractTypeLabel,
 } from "@/lib/data";
 import { tglParts } from "@/lib/format";
+import { cookies } from "next/headers";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+import { BuatLowonganButton } from "@/components/create-forms";
+import { clients as mockClients } from "@/lib/data";
+
+type JobRow = { id: string; title: string; client_id: string | null; type: string | null; location: string | null; applicants: number; target: number; status: string };
+
+async function getJobs(): Promise<{ jobs: JobRow[]; clientList: { id: string; name: string }[]; clientMap: Record<string, string> }> {
+  let clientList = mockClients.map((c) => ({ id: c.id, name: c.name }));
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const [{ data: jp }, { data: cls }] = await Promise.all([
+        sb.from("job_postings").select("id,title,client_id,type,location,applicants,target,status").order("posted", { ascending: false }),
+        sb.from("clients").select("id,name"),
+      ]);
+      if (cls) clientList = cls;
+      if (jp) {
+        const clientMap = Object.fromEntries(clientList.map((c) => [c.id, c.name]));
+        return { jobs: jp as JobRow[], clientList, clientMap };
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+  const jobs: JobRow[] = jobPostings.map((j) => ({ id: j.id, title: j.title, client_id: j.clientId, type: j.type, location: j.location, applicants: j.applicants, target: j.target, status: j.status }));
+  const clientMap = Object.fromEntries(clientList.map((c) => [c.id, c.name]));
+  return { jobs, clientList, clientMap };
+}
 
 const stageTone: Record<string, string> = {
   Pelamar: "slate",
@@ -20,7 +49,8 @@ const stageTone: Record<string, string> = {
   Diterima: "green",
 };
 
-export default function RekrutmenPage() {
+export default async function RekrutmenPage() {
+  const { jobs, clientList, clientMap } = await getJobs();
   const stats = [
     { label: "Lowongan Aktif", value: recruitmentStats.lowonganAktif, Icon: Briefcase },
     { label: "Total Pelamar", value: recruitmentStats.totalPelamar, Icon: Users },
@@ -34,11 +64,7 @@ export default function RekrutmenPage() {
       <PageHeader
         title="Rekrutmen & Onboarding"
         subtitle="Kelola lowongan, pipeline kandidat, interview, dan onboarding tenaga kerja"
-        actions={
-          <button className="btn-primary">
-            <Plus size={16} /> Buat Lowongan
-          </button>
-        }
+        actions={<BuatLowonganButton clients={clientList} />}
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -116,13 +142,22 @@ export default function RekrutmenPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {jobPostings.map((j) => (
+                {jobs.length === 0 && (
+                  <tr>
+                    <td className="td text-muted-foreground" colSpan={6}>Belum ada lowongan.</td>
+                  </tr>
+                )}
+                {jobs.map((j) => (
                   <tr key={j.id} className="hover:bg-muted">
                     <td className="td">
                       <p className="font-semibold text-foreground">{j.title}</p>
-                      <Badge tone="teal">{contractTypeLabel[j.type]}</Badge>
+                      {j.type && (
+                        <Badge tone="teal">
+                          {contractTypeLabel[j.type as keyof typeof contractTypeLabel] ?? j.type}
+                        </Badge>
+                      )}
                     </td>
-                    <td className="td text-muted-foreground">{clientById(j.clientId)?.name}</td>
+                    <td className="td text-muted-foreground">{j.client_id ? clientMap[j.client_id] : "-"}</td>
                     <td className="td">
                       <span className="inline-flex items-center gap-1 text-muted-foreground">
                         <MapPin size={13} /> {j.location}

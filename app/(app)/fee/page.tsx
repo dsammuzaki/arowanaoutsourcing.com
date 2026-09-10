@@ -1,22 +1,63 @@
+import { cookies } from "next/headers";
 import { PageHeader, Card, StatusPill, Avatar } from "@/components/ui";
-import { IconHandshake, IconPlus } from "@/components/icons";
-import { referralFees } from "@/lib/data";
+import { IconHandshake } from "@/components/icons";
+import { CatatFeeButton } from "@/components/create-forms";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+import { referralFees as mockFees, clients as mockClients } from "@/lib/data";
 import { rupiah } from "@/lib/format";
 
-const total = referralFees.reduce((s, f) => s + f.total, 0);
-const dibayar = referralFees.filter((f) => f.status === "dibayar").reduce((s, f) => s + f.total, 0);
+type FeeRow = { id: string; recipient: string; clientName: string; base: number; feePct: number; total: number; status: string };
 
-export default function FeePage() {
+async function getData(): Promise<{ rows: FeeRow[]; clients: { id: string; name: string }[] }> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const [{ data: fees }, { data: cls }] = await Promise.all([
+        sb.from("referral_fees").select("id,recipient,base,fee_pct,total,status,clients(name)").order("created_at", { ascending: false }),
+        sb.from("clients").select("id,name"),
+      ]);
+      if (fees) {
+        const rows: FeeRow[] = fees.map((f) => {
+          const c = f.clients as { name?: string } | { name?: string }[] | null;
+          return {
+            id: String(f.id),
+            recipient: f.recipient,
+            clientName: (Array.isArray(c) ? c[0]?.name : c?.name) ?? "-",
+            base: Number(f.base) || 0,
+            feePct: Number(f.fee_pct) || 0,
+            total: Number(f.total) || 0,
+            status: f.status ?? "pending",
+          };
+        });
+        return { rows, clients: cls ?? [] };
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+  const rows: FeeRow[] = mockFees.map((f) => ({
+    id: f.id,
+    recipient: f.recipient,
+    clientName: f.client.name,
+    base: f.base,
+    feePct: f.feePct,
+    total: f.total,
+    status: f.status,
+  }));
+  return { rows, clients: mockClients.map((c) => ({ id: c.id, name: c.name })) };
+}
+
+export default async function FeePage() {
+  const { rows, clients } = await getData();
+  const total = rows.reduce((s, f) => s + f.total, 0);
+  const dibayar = rows.filter((f) => f.status === "dibayar").reduce((s, f) => s + f.total, 0);
+
   return (
     <>
       <PageHeader
         title="Laporan Fee / Komisi"
         subtitle="Komisi pihak ketiga — dihitung dari Management Fee neto (setelah PPh 23)"
-        actions={
-          <button className="btn-primary">
-            <IconPlus width={16} height={16} /> Catat Fee
-          </button>
-        }
+        actions={<CatatFeeButton clients={clients} />}
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -41,7 +82,7 @@ export default function FeePage() {
 
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">
-          <h2 className="font-bold text-foreground">Riwayat Fee / Komisi — Agustus 2026</h2>
+          <h2 className="font-bold text-foreground">Riwayat Fee / Komisi</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -56,7 +97,12 @@ export default function FeePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {referralFees.map((f) => (
+              {rows.length === 0 && (
+                <tr>
+                  <td className="td text-muted-foreground" colSpan={6}>Belum ada catatan fee.</td>
+                </tr>
+              )}
+              {rows.map((f) => (
                 <tr key={f.id} className="hover:bg-muted">
                   <td className="td">
                     <div className="flex items-center gap-3">
@@ -64,7 +110,7 @@ export default function FeePage() {
                       <span className="font-semibold text-foreground">{f.recipient}</span>
                     </div>
                   </td>
-                  <td className="td text-muted-foreground">{f.client.name}</td>
+                  <td className="td text-muted-foreground">{f.clientName}</td>
                   <td className="td text-right text-muted-foreground">{rupiah(f.base)}</td>
                   <td className="td text-right font-semibold">{f.feePct}%</td>
                   <td className="td text-right font-semibold text-foreground">{rupiah(f.total)}</td>
@@ -78,7 +124,6 @@ export default function FeePage() {
         </div>
         <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
           Rumus: <span className="font-semibold text-foreground">Fee = (Management Fee − PPh 23) × persentase</span>.
-          Dicatat otomatis per periode dan per kontrak.
         </p>
       </Card>
     </>

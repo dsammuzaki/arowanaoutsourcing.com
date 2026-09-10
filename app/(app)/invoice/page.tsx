@@ -1,31 +1,91 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { PageHeader, Card, StatusPill, Badge } from "@/components/ui";
-import { IconInvoice, IconPlus } from "@/components/icons";
-import { invoices, contractTypeLabel } from "@/lib/data";
+import { IconInvoice } from "@/components/icons";
+import { BuatInvoiceButton } from "@/components/create-forms";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+import { invoices as mockInvoices, clients as mockClients, contractTypeLabel } from "@/lib/data";
 import { rupiah, tanggal } from "@/lib/format";
 
-const totalTagihan = invoices.reduce((s, i) => s + i.grandTotal, 0);
-const totalMf = invoices.reduce((s, i) => s + i.managementFee, 0);
-const totalPpn = invoices.reduce((s, i) => s + i.ppn, 0);
-const belum = invoices.filter((i) => i.status !== "dibayar").reduce((s, i) => s + i.grandTotal, 0);
+type InvRow = {
+  id: string;
+  number: string;
+  clientName: string;
+  contractType: string | null;
+  entityPrefix: string;
+  salarySubtotal: number;
+  bpjsClient: number;
+  managementFee: number;
+  ppn: number;
+  grandTotal: number;
+  status: string;
+  dueDate: string;
+};
 
-export default function InvoicePage() {
+async function getData(): Promise<{ rows: InvRow[]; clients: { id: string; name: string }[] }> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const [{ data: inv }, { data: cls }] = await Promise.all([
+        sb.from("invoices").select("*, clients(name, contract_type)").order("created_at", { ascending: false }),
+        sb.from("clients").select("id,name"),
+      ]);
+      if (inv) {
+        const rows: InvRow[] = inv.map((v) => {
+          const c = v.clients as { name?: string; contract_type?: string } | { name?: string; contract_type?: string }[] | null;
+          const cc = Array.isArray(c) ? c[0] : c;
+          return {
+            id: v.id,
+            number: v.number,
+            clientName: cc?.name ?? "-",
+            contractType: cc?.contract_type ?? null,
+            entityPrefix: v.entity_prefix ?? "",
+            salarySubtotal: Number(v.salary_subtotal) || 0,
+            bpjsClient: Number(v.bpjs_client) || 0,
+            managementFee: Number(v.management_fee) || 0,
+            ppn: Number(v.ppn) || 0,
+            grandTotal: Number(v.grand_total) || 0,
+            status: v.status ?? "draft",
+            dueDate: v.due_date ?? "",
+          };
+        });
+        return { rows, clients: cls ?? [] };
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+  const rows: InvRow[] = mockInvoices.map((v) => ({
+    id: v.id,
+    number: v.number,
+    clientName: v.client.name,
+    contractType: v.client.contractType,
+    entityPrefix: v.entity.invoicePrefix,
+    salarySubtotal: v.salarySubtotal,
+    bpjsClient: v.bpjsClient,
+    managementFee: v.managementFee,
+    ppn: v.ppn,
+    grandTotal: v.grandTotal,
+    status: v.status,
+    dueDate: v.dueDate,
+  }));
+  return { rows, clients: mockClients.map((c) => ({ id: c.id, name: c.name })) };
+}
+
+export default async function InvoicePage() {
+  const { rows, clients } = await getData();
   const stats = [
-    { label: "Total Tagihan", value: rupiah(totalTagihan, { compact: true }) },
-    { label: "Management Fee", value: rupiah(totalMf, { compact: true }) },
-    { label: "PPN Terkumpul", value: rupiah(totalPpn, { compact: true }) },
-    { label: "Belum Terbayar", value: rupiah(belum, { compact: true }) },
+    { label: "Total Tagihan", value: rupiah(rows.reduce((s, i) => s + i.grandTotal, 0), { compact: true }) },
+    { label: "Management Fee", value: rupiah(rows.reduce((s, i) => s + i.managementFee, 0), { compact: true }) },
+    { label: "PPN Terkumpul", value: rupiah(rows.reduce((s, i) => s + i.ppn, 0), { compact: true }) },
+    { label: "Belum Terbayar", value: rupiah(rows.filter((i) => i.status !== "dibayar").reduce((s, i) => s + i.grandTotal, 0), { compact: true }) },
   ];
   return (
     <>
       <PageHeader
         title="Invoice Klien"
         subtitle="Penagihan otomatis dengan Management Fee, PPN 12%, dan PPh 23"
-        actions={
-          <button className="btn-primary">
-            <IconPlus width={16} height={16} /> Buat Invoice
-          </button>
-        }
+        actions={<BuatInvoiceButton clients={clients} />}
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -57,28 +117,32 @@ export default function InvoicePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {invoices.map((inv) => (
+              {rows.length === 0 && (
+                <tr>
+                  <td className="td text-muted-foreground" colSpan={9}>Belum ada invoice.</td>
+                </tr>
+              )}
+              {rows.map((inv) => (
                 <tr key={inv.id} className="hover:bg-muted">
                   <td className="td font-semibold">{inv.number}</td>
                   <td className="td">
-                    <p>{inv.client.name}</p>
-                    <Badge tone="teal">{contractTypeLabel[inv.client.contractType]}</Badge>
+                    <p>{inv.clientName}</p>
+                    {inv.contractType && (
+                      <Badge tone="teal">
+                        {contractTypeLabel[inv.contractType as keyof typeof contractTypeLabel] ?? inv.contractType}
+                      </Badge>
+                    )}
                   </td>
-                  <td className="td text-muted-foreground">{inv.entity.invoicePrefix}</td>
-                  <td className="td text-right text-muted-foreground">
-                    {rupiah(inv.salarySubtotal + inv.bpjsClient)}
-                  </td>
+                  <td className="td text-muted-foreground">{inv.entityPrefix}</td>
+                  <td className="td text-right text-muted-foreground">{rupiah(inv.salarySubtotal + inv.bpjsClient)}</td>
                   <td className="td text-right text-muted-foreground">{rupiah(inv.managementFee)}</td>
                   <td className="td text-right font-semibold text-foreground">{rupiah(inv.grandTotal)}</td>
-                  <td className="td text-muted-foreground">{tanggal(inv.dueDate)}</td>
+                  <td className="td text-muted-foreground">{inv.dueDate ? tanggal(inv.dueDate) : "-"}</td>
                   <td className="td">
                     <StatusPill status={inv.status} />
                   </td>
                   <td className="td text-right">
-                    <Link
-                      href={`/invoice/${inv.id}`}
-                      className="font-semibold text-primary hover:underline"
-                    >
+                    <Link href={`/invoice/${inv.id}`} className="font-semibold text-primary hover:underline">
                       Detail
                     </Link>
                   </td>
