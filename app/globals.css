@@ -122,9 +122,26 @@ body {
   animation: pulseGreen 1.6s ease-in-out infinite;
 }
 
+/* Animasi masuk untuk modal / pop-up detail */
+@keyframes modalOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalPanelIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-overlay-in {
+  animation: modalOverlayIn 0.18s ease-out;
+}
+.modal-panel-in {
+  animation: modalPanelIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-anim { animation: none; }
   .pulse-dot { animation: none; opacity: 1; }
+  .modal-overlay-in, .modal-panel-in { animation: none; }
 }
 
 /* Cetak: sembunyikan navigasi & tombol, tampilkan konten saja — output A4 rapi */
@@ -175,6 +192,35 @@ body {
     content: "" !important;
   }
   .print-full {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  /* Cetak hanya satu elemen (dokumen) — sisanya disembunyikan */
+  body.print-one * {
+    visibility: hidden !important;
+  }
+  body.print-one [data-print-target],
+  body.print-one [data-print-target] * {
+    visibility: visible !important;
+  }
+  /* Netralkan pembungkus modal agar dokumen tidak terpotong tinggi/overflow */
+  body.print-one .fixed,
+  body.print-one [role="dialog"] {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+  body.print-one [data-print-target] {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
   }

@@ -66,11 +66,17 @@ export function StatusPill({ status }: { status: string }) {
 export function Card({
   children,
   className = "",
+  id,
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
 }) {
-  return <div className={`card ${className}`}>{children}</div>;
+  return (
+    <div id={id} className={`card ${className}`}>
+      {children}
+    </div>
+  );
 }
 
 export function Avatar({ name, tone = "teal" }: { name: string; tone?: "teal" | "navy" }) {

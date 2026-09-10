@@ -3,10 +3,17 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { Card, StatusPill, Badge } from "@/components/ui";
 import { Logo } from "@/components/logo";
-import { IconPrint, IconDownload, IconTruck, IconDoc } from "@/components/icons";
-import { invoices, legalEntities, contractTypeLabel, type ContractType } from "@/lib/data";
+import {
+  invoices,
+  legalEntities,
+  contractTypeLabel,
+  employees,
+  attendanceSummaryFor,
+  type ContractType,
+} from "@/lib/data";
 import { rupiah, tanggal } from "@/lib/format";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+import { InvoiceDocsToolbar, type RekapRow } from "@/components/invoice-docs";
 
 type InvoiceView = (typeof invoices)[number];
 
@@ -69,6 +76,35 @@ export default async function InvoiceDetailPage({
   const inv = await getInvoice(id);
   if (!inv) notFound();
 
+  // Rekap absensi tenaga kerja klien invoice ini (deterministik dari data karyawan).
+  const rekap: RekapRow[] = employees
+    .filter((e) => e.clientId === inv.client.id && e.status === "aktif")
+    .slice(0, 30)
+    .map((e) => {
+      const a = attendanceSummaryFor(e.id);
+      return {
+        name: e.name,
+        position: e.position,
+        hadir: a.hadir,
+        izin: a.izin,
+        sakit: a.sakit,
+        alpha: a.alpha,
+        rate: a.rate,
+      };
+    });
+
+  const docData = {
+    number: inv.number,
+    period: inv.period,
+    dueDate: inv.dueDate,
+    status: inv.status,
+    entityName: inv.entity.name,
+    entityNpwp: inv.entity.npwp,
+    clientName: inv.client.name,
+    spkNumber: inv.client.spkNumber,
+    grandTotal: inv.grandTotal,
+  };
+
   const Row = ({
     label,
     value,
@@ -99,24 +135,11 @@ export default async function InvoiceDetailPage({
         <Link href="/invoice" className="text-sm font-semibold text-primary hover:underline">
           ← Kembali ke Invoice
         </Link>
-        <div className="flex gap-2">
-          <button className="btn-outline">
-            <IconTruck width={16} height={16} /> Surat Jalan
-          </button>
-          <button className="btn-outline">
-            <IconDoc width={16} height={16} /> Internal Memo
-          </button>
-          <button className="btn-outline">
-            <IconPrint width={16} height={16} /> Cetak
-          </button>
-          <button className="btn-primary">
-            <IconDownload width={16} height={16} /> Unduh PDF
-          </button>
-        </div>
+        <InvoiceDocsToolbar inv={docData} rekap={rekap} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="overflow-hidden lg:col-span-2">
+        <Card id="doc-invoice" className="overflow-hidden lg:col-span-2">
           {/* Header */}
           <div className="flex items-start justify-between gap-4 border-b border-border p-6">
             <div className="flex items-center gap-3">
@@ -188,26 +211,7 @@ export default async function InvoiceDetailPage({
         <div className="space-y-6">
           <Card className="p-5">
             <h3 className="mb-3 font-bold text-foreground">Dokumen Pendamping</h3>
-            <div className="space-y-2">
-              {[
-                { icon: IconTruck, label: "Surat Jalan", desc: "Pengiriman invoice fisik" },
-                { icon: IconDoc, label: "Internal Memo", desc: "Nota internal penagihan" },
-                { icon: IconDoc, label: "Rekap Absensi", desc: "Lampiran kehadiran" },
-              ].map((d) => (
-                <button
-                  key={d.label}
-                  className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left hover:bg-muted"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <d.icon width={18} height={18} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{d.label}</p>
-                    <p className="text-xs text-muted-foreground">{d.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <InvoiceDocsToolbar inv={docData} rekap={rekap} variant="panel" />
           </Card>
 
           <Card className="p-5">

@@ -32,6 +32,7 @@ import {
 } from "@/lib/data";
 import { rupiah, tanggal, initials } from "@/lib/format";
 import { PrintButton } from "@/components/print-button";
+import { Logo } from "@/components/logo";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 
 // Ambil karyawan + kontrak: coba database dulu, lalu fallback data contoh.
@@ -131,9 +132,19 @@ export default async function KaryawanDetailPage({
         <Link href="/kontrak" className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
           <ArrowLeft size={16} /> Kembali ke Monitoring Kontrak
         </Link>
-        <PrintButton className="btn-outline">
+        <PrintButton className="btn-outline" targetId="doc-profil">
           <Printer size={16} /> Cetak Profil
         </PrintButton>
+      </div>
+
+      <div id="doc-profil" className="print-full">
+      {/* Kop cetak (hanya tampil saat cetak) */}
+      <div className="mb-4 hidden items-center gap-3 border-b-2 border-navy pb-3 print:flex">
+        <Logo size={44} />
+        <div>
+          <p className="text-base font-bold text-navy">PT. Arowana Bintang Perdana</p>
+          <p className="text-[11px] text-gray-500">Profil & Monitoring Kontrak Tenaga Kerja</p>
+        </div>
       </div>
 
       {/* Header */}
@@ -366,6 +377,7 @@ export default async function KaryawanDetailPage({
           </table>
         </div>
       </Card>
+      </div>
     </>
   );
 }
