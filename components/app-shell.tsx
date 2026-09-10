@@ -144,7 +144,7 @@ function SidebarInner({
 }) {
   const pathname = usePathname();
   return (
-    <div className="flex h-full flex-col bg-sidebar">
+    <div className="safe-top flex h-full flex-col bg-sidebar">
       <div className="flex items-center gap-3 px-5 py-5">
         <Logo size={38} />
         <div className="leading-tight">
@@ -228,7 +228,9 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/90 px-4 backdrop-blur sm:px-6">
+        <header
+          className="safe-top sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/90 px-4 backdrop-blur sm:px-6"
+        >
           <button
             className="rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
             onClick={() => setOpen(true)}
@@ -255,7 +257,7 @@ export function AppShell({
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>
-        <footer className="border-t border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8">
+        <footer className="safe-bottom border-t border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
             <div className="flex items-center gap-2">
               <Logo size={22} />

@@ -101,6 +101,14 @@ body {
   }
 }
 
+/* Safe-area (iPhone notch / status bar) untuk mode full-screen PWA */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* Animated welcome hero — warna teal↔emas bergerak */
 @keyframes heroFlow {
   0% { background-position: 0% 50%; }
