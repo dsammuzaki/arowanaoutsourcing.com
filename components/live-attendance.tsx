@@ -42,7 +42,113 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
 }
 
 type Emp = { id: string; name: string };
-type Result = { status: string; address: string | null; siteName: string | null; distance: number | null; kind: string };
+type Site = { id: string; name: string; lat: number; lng: number; radius_m: number };
+type Result = { status: string; address: string | null; siteName: string | null; distance: number | null; kind: string; photo?: string };
+
+function haversineMeters(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s =
+    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number, maxLines: number): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const t = cur ? cur + " " + w : w;
+    if (ctx.measureText(t).width > maxW && cur) {
+      lines.push(cur);
+      cur = w;
+      if (lines.length === maxLines - 1) break;
+    } else cur = t;
+  }
+  if (cur && lines.length < maxLines) lines.push(cur);
+  // potong bila kepanjangan
+  if (lines.length === maxLines) {
+    let last = lines[maxLines - 1];
+    while (ctx.measureText(last + "…").width > maxW && last.length > 1) last = last.slice(0, -1);
+    lines[maxLines - 1] = last + "…";
+  }
+  return lines;
+}
+
+// Tempelkan waktu, koordinat, alamat, dan status geofence ke atas foto.
+function stampPhoto(
+  frame: HTMLCanvasElement,
+  info: {
+    dateStr: string;
+    timeStr: string;
+    lat: number;
+    lng: number;
+    accuracy: number;
+    address: string | null;
+    site: Site | null;
+    distance: number | null;
+    within: boolean;
+  }
+): string {
+  const ctx = frame.getContext("2d");
+  if (!ctx) return frame.toDataURL("image/jpeg", 0.85);
+  const W = frame.width;
+  const H = frame.height;
+  const pad = Math.round(W * 0.035);
+  const fs = Math.max(12, Math.round(W * 0.03));
+  const fsB = Math.max(13, Math.round(W * 0.036));
+  const lh = Math.round(fs * 1.4);
+
+  ctx.font = `400 ${fs}px system-ui, -apple-system, sans-serif`;
+  const addrLines = wrapText(ctx, info.address || "Alamat tidak tersedia", W - 2 * pad - Math.round(W * 0.02), 3);
+
+  const lines: { t: string; b?: boolean; c?: string }[] = [
+    { t: `${info.dateStr}, ${info.timeStr} WIB`, b: true },
+    { t: `Koordinat: ${info.lat.toFixed(6)}, ${info.lng.toFixed(6)}  (±${Math.round(info.accuracy)}m)` },
+    ...addrLines.map((t) => ({ t })),
+  ];
+  if (info.site)
+    lines.push({
+      t: `${info.site.name} · ${info.distance} m · ${info.within ? "DALAM AREA" : "LUAR AREA"}`,
+      c: info.within ? "#6ee7b7" : "#fca5a5",
+    });
+
+  const bandH = pad * 2 + lines.length * lh;
+  const top = H - bandH;
+  const grad = ctx.createLinearGradient(0, top - 24, 0, H);
+  grad.addColorStop(0, "rgba(4,16,26,0)");
+  grad.addColorStop(0.3, "rgba(4,16,26,0.55)");
+  grad.addColorStop(1, "rgba(4,16,26,0.9)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, top - 24, W, bandH + 24);
+  // aksen teal
+  ctx.fillStyle = "#1a7d9c";
+  ctx.fillRect(0, top, Math.max(3, Math.round(W * 0.012)), bandH);
+
+  const x = pad + Math.round(W * 0.02);
+  let y = top + pad;
+  ctx.textBaseline = "top";
+  for (const ln of lines) {
+    const size = ln.b ? fsB : fs;
+    ctx.font = `${ln.b ? "700" : "400"} ${size}px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillText(ln.t, x + 1, y + 1);
+    ctx.fillStyle = ln.c || (ln.b ? "#e7fbff" : "#ffffff");
+    ctx.fillText(ln.t, x, y);
+    y += lh;
+  }
+
+  // watermark kiri-atas
+  ctx.font = `700 ${fsB}px system-ui, sans-serif`;
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.fillText("ABP · Absensi", pad + 1, pad + 1);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("ABP · Absensi", pad, pad);
+
+  return frame.toDataURL("image/jpeg", 0.85);
+}
 
 const statusMeta: Record<string, { label: string; cls: string; ok: boolean }> = {
   valid: { label: "Valid", cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400", ok: true },
@@ -51,7 +157,7 @@ const statusMeta: Record<string, { label: string; cls: string; ok: boolean }> = 
   mencurigakan: { label: "Mencurigakan", cls: "bg-red-50 text-brand-red dark:bg-red-950/40", ok: false },
 };
 
-export function LiveAttendance({ employees }: { employees: Emp[] }) {
+export function LiveAttendance({ employees, sites = [] }: { employees: Emp[]; sites?: Site[] }) {
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
   const [empId, setEmpId] = useState(employees[0]?.id ?? "");
@@ -104,10 +210,10 @@ export function LiveAttendance({ employees }: { employees: Emp[] }) {
     setBusyMsg("");
   }
 
-  function captureSelfie(): string | null {
+  function grabFrame(): HTMLCanvasElement | null {
     const v = videoRef.current;
     if (!v || !v.videoWidth) return null;
-    const w = 480;
+    const w = 720;
     const h = Math.round((v.videoHeight / v.videoWidth) * w);
     const canvas = document.createElement("canvas");
     canvas.width = w;
@@ -115,7 +221,7 @@ export function LiveAttendance({ employees }: { employees: Emp[] }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     ctx.drawImage(v, 0, 0, w, h);
-    return canvas.toDataURL("image/jpeg", 0.7);
+    return canvas;
   }
 
   function getPosition(): Promise<GeolocationPosition> {
@@ -135,13 +241,12 @@ export function LiveAttendance({ employees }: { employees: Emp[] }) {
       return;
     }
     setError("");
-    // 1) ambil selfie
-    const selfie = captureSelfie();
-    if (!selfie) {
+    // 1) bekukan frame foto pada saat klik
+    const frame = grabFrame();
+    if (!frame) {
       setError("Gagal mengambil foto. Coba lagi.");
       return;
     }
-    stopCamera();
 
     // 2) sinyal anti-mock (klien)
     const clientFlags: string[] = [];
@@ -166,17 +271,41 @@ export function LiveAttendance({ employees }: { employees: Emp[] }) {
           : "Lokasi tidak terbaca. Pastikan GPS menyala.";
       setError(msg);
       setPhase("kamera");
-      openCamera();
       return;
     }
     const { latitude: lat, longitude: lng, accuracy } = pos.coords;
     if (accuracy != null && (accuracy <= 0 || accuracy > 1000)) clientFlags.push("mock_terdeteksi");
 
-    // 4) alamat lengkap (best-effort)
+    // 4) alamat lengkap (best-effort) + geofence terdekat
     setBusyMsg("Menentukan alamat lokasi…");
     const address = await reverseGeocode(lat, lng);
+    let nearest: Site | null = null;
+    let nearestDist = Infinity;
+    for (const s of sites) {
+      const d = haversineMeters(lat, lng, s.lat, s.lng);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = s;
+      }
+    }
+    const within = !!nearest && nearestDist <= nearest.radius_m;
 
-    // 5) kirim ke server (server yang menilai keabsahan)
+    // 5) tempelkan info ke foto
+    const now2 = new Date();
+    const selfie = stampPhoto(frame, {
+      dateStr: fmtDate(now2),
+      timeStr: fmtTime(now2),
+      lat,
+      lng,
+      accuracy: accuracy ?? 0,
+      address,
+      site: nearest,
+      distance: nearest ? Math.round(nearestDist) : null,
+      within,
+    });
+    stopCamera();
+
+    // 6) kirim ke server (server yang menilai keabsahan)
     setPhase("kirim");
     setBusyMsg("Menyimpan absensi…");
     const emp = employees.find((e) => e.id === empId);
@@ -200,7 +329,14 @@ export function LiveAttendance({ employees }: { employees: Emp[] }) {
       openCamera();
       return;
     }
-    setResult({ status: res.status ?? "valid", address: res.address ?? address, siteName: res.siteName ?? null, distance: res.distance ?? null, kind });
+    setResult({
+      status: res.status ?? "valid",
+      address: res.address ?? address,
+      siteName: res.siteName ?? null,
+      distance: res.distance ?? null,
+      kind,
+      photo: selfie,
+    });
     setCamOpen(false);
     router.refresh();
   }
@@ -278,7 +414,7 @@ export function LiveAttendance({ employees }: { employees: Emp[] }) {
 
           {result && (
             <div className="rounded-xl border border-border p-3">
-              <div className="mb-1 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground">
                   Absen {result.kind === "masuk" ? "Masuk" : "Pulang"} tercatat
                 </span>
@@ -286,6 +422,10 @@ export function LiveAttendance({ employees }: { employees: Emp[] }) {
                   {statusMeta[result.status]?.label ?? result.status}
                 </span>
               </div>
+              {result.photo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={result.photo} alt="Foto absen bertitik lokasi" className="mb-2 w-full rounded-lg" />
+              )}
               <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                 <MapPin size={13} className="mt-0.5 shrink-0 text-primary" />
                 {result.address ?? "Alamat tidak tersedia (koordinat tersimpan)"}

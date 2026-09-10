@@ -50,23 +50,28 @@ type LogRow = {
   status: string;
 };
 
+type SiteRow = { id: string; name: string; lat: number; lng: number; radius_m: number };
+
 async function getData() {
   let empOptions = mockEmployees.filter((e) => e.status === "aktif").map((e) => ({ id: e.id, name: e.name }));
   let log: LogRow[] = [];
+  let sites: SiteRow[] = [];
   if (isSupabaseConfigured()) {
     try {
       const sb = createClient(await cookies());
-      const [{ data: emps }, { data: rows }] = await Promise.all([
+      const [{ data: emps }, { data: rows }, { data: siteRows }] = await Promise.all([
         sb.from("employees").select("id,name").eq("status", "aktif").order("name"),
         sb.from("attendance").select("*").order("created_at", { ascending: false }).limit(50),
+        sb.from("attendance_sites").select("id,name,lat,lng,radius_m"),
       ]);
       if (emps && emps.length) empOptions = emps.map((e) => ({ id: e.id, name: e.name }));
       if (rows) log = rows as LogRow[];
+      if (siteRows) sites = siteRows as SiteRow[];
     } catch {
       /* fallback */
     }
   }
-  return { empOptions, log };
+  return { empOptions, log, sites };
 }
 
 function fmtWaktu(iso: string) {
@@ -80,7 +85,7 @@ function fmtWaktu(iso: string) {
 }
 
 export default async function AbsensiPage() {
-  const { empOptions, log } = await getData();
+  const { empOptions, log, sites } = await getData();
   const cards = [
     { label: "Hadir", value: attendanceSummary.hadir, tone: "teal" },
     { label: "Izin", value: attendanceSummary.izin, tone: "amber" },
@@ -103,7 +108,7 @@ export default async function AbsensiPage() {
         }
       />
 
-      <LiveAttendance employees={empOptions} />
+      <LiveAttendance employees={empOptions} sites={sites} />
 
       {/* Log absensi realtime dari database */}
       <Card className="mb-6 overflow-hidden">
