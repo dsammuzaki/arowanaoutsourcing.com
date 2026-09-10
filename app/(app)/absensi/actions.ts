@@ -81,8 +81,16 @@ export async function recordAttendance(
 
   const admin = createAdminClient();
 
+  const tableMissing = (msg?: string) =>
+    !!msg && /schema cache|does not exist|could not find the table|PGRST205/i.test(msg);
+
   // --- Geofence: cari lokasi kerja terdekat ---
-  const { data: sites } = await admin.from("attendance_sites").select("*");
+  const { data: sites, error: sitesErr } = await admin.from("attendance_sites").select("*");
+  if (tableMissing(sitesErr?.message))
+    return {
+      ok: false,
+      error: "Database absensi belum disiapkan. Jalankan skema SQL (attendance_sites & attendance) di Supabase terlebih dahulu.",
+    };
   let nearest: { id: string; name: string; radius_m: number } | null = null;
   let nearestDist = Infinity;
   for (const s of sites ?? []) {
@@ -174,8 +182,11 @@ export async function recordAttendance(
     user_agent: input.userAgent || null,
   });
   if (error) {
-    if (/relation .* does not exist/i.test(error.message))
-      return { ok: false, error: "Tabel absensi belum dibuat. Jalankan supabase/schema-3.sql dulu." };
+    if (tableMissing(error.message))
+      return {
+        ok: false,
+        error: "Database absensi belum disiapkan. Jalankan skema SQL (attendance_sites & attendance) di Supabase terlebih dahulu.",
+      };
     return { ok: false, error: error.message };
   }
 
