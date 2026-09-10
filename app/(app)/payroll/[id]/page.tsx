@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Card, Badge } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { IconPrint, IconDownload } from "@/components/icons";
+import { PrintButton } from "@/components/print-button";
 import { employeeById, calcPayroll, clients, legalEntities, contractTypeLabel } from "@/lib/data";
 import { rupiah } from "@/lib/format";
 
@@ -32,16 +33,16 @@ export default async function SlipPage({
           ← Kembali ke Payroll
         </Link>
         <div className="flex gap-2">
-          <button className="btn-outline">
+          <PrintButton className="btn-outline" targetId="doc-slip">
             <IconPrint width={16} height={16} /> Cetak
-          </button>
-          <button className="btn-primary">
+          </PrintButton>
+          <PrintButton className="btn-primary" targetId="doc-slip">
             <IconDownload width={16} height={16} /> Unduh PDF
-          </button>
+          </PrintButton>
         </div>
       </div>
 
-      <Card className="mx-auto max-w-3xl overflow-hidden">
+      <Card id="doc-slip" className="mx-auto max-w-3xl overflow-hidden">
         {/* Slip header */}
         <div className="flex items-start justify-between gap-4 border-b border-border bg-navy p-6 text-white">
           <div className="flex items-center gap-3">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageHeader, Card, Badge, StatusPill, Avatar } from "@/components/ui";
-import { FileClock, AlertTriangle, CheckCircle2, CalendarX2, Search, Download, ChevronRight } from "lucide-react";
+import { FileClock, AlertTriangle, CheckCircle2, CalendarX2, Search, ChevronRight } from "lucide-react";
+import { ExportButton } from "@/components/export-button";
 import {
   employeeContracts,
   kontrakStats,
@@ -36,9 +37,29 @@ export default function KontrakPage() {
         title="Monitoring Kontrak"
         subtitle={`Masa & sisa kontrak tenaga kerja — per ${tanggal(REF_DATE)}`}
         actions={
-          <button className="btn-outline">
-            <Download size={16} /> Ekspor
-          </button>
+          <ExportButton
+            filename="monitoring-kontrak.csv"
+            columns={[
+              { key: "nama", label: "Nama" },
+              { key: "jabatan", label: "Jabatan" },
+              { key: "klien", label: "Klien" },
+              { key: "jenis", label: "Jenis Kontrak" },
+              { key: "mulai", label: "Mulai" },
+              { key: "berakhir", label: "Berakhir" },
+              { key: "sisaHari", label: "Sisa (hari)" },
+              { key: "status", label: "Status" },
+            ]}
+            rows={rows.map((c) => ({
+              nama: c.employee.name,
+              jabatan: c.employee.position,
+              klien: clientById(c.employee.clientId)?.name ?? "-",
+              jenis: contractTypeLabel[c.contractType],
+              mulai: c.start,
+              berakhir: c.end,
+              sisaHari: c.remainingDays,
+              status: contractStatusLabel[c.status],
+            }))}
+          />
         }
       />
 
