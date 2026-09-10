@@ -897,10 +897,10 @@ export const aboutCompany = {
     { title: "General Supplier", desc: "Pengadaan cleaning equipment, APAR, serta perlengkapan satpam & pengamanan." },
   ],
   team: [
-    { name: "Tri Antoro", role: "Director" },
-    { name: "Mariyanti", role: "HR & GA Manager" },
-    { name: "Deo Galuh", role: "Accounting & Finance" },
-    { name: "M. Robby Zainudin", role: "Business Development & Operation Manager" },
+    { name: "Zaenudin ZAI", role: "Director" },
+    { name: "Agus Hidayatulloh", role: "Head of Operation" },
+    { name: "Rifal Riyadi", role: "Head of Administration" },
+    { name: "Masturoh HS, S.Pd.I", role: "Finance" },
   ],
   stats: [
     { label: "Berdiri Sejak", value: "2018" },

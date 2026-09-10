@@ -127,19 +127,55 @@ body {
   .pulse-dot { animation: none; opacity: 1; }
 }
 
-/* Cetak: sembunyikan navigasi & tombol, tampilkan konten saja */
+/* Cetak: sembunyikan navigasi & tombol, tampilkan konten saja — output A4 rapi */
+@page {
+  size: A4;
+  margin: 12mm 12mm 14mm 12mm;
+}
 @media print {
+  :root {
+    --background: #ffffff;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  /* Pastikan warna status, header navy, badge ikut tercetak */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   aside,
   header,
+  footer,
   .no-print {
     display: none !important;
   }
   main {
     padding: 0 !important;
+    margin: 0 !important;
     max-width: 100% !important;
+  }
+  /* Hanya tampilkan area cetak bila ada penanda .print-area */
+  body.printing-area .print-hide-when-area {
+    display: none !important;
+  }
+  .card,
+  table,
+  tr,
+  .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
   .card {
     box-shadow: none !important;
-    border-color: #ddd !important;
+    border-color: #d1d5db !important;
+  }
+  a[href]:after {
+    content: "" !important;
+  }
+  .print-full {
+    box-shadow: none !important;
+    border: none !important;
   }
 }

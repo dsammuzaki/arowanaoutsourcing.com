@@ -8,6 +8,7 @@ import { Logo } from "./logo";
 import { createClient } from "@/utils/supabase/client";
 import { initials } from "@/lib/format";
 import { OnboardingQuest } from "./onboarding-quest";
+import { NotificationsBell } from "./notifications-bell";
 
 export type ShellUser = { email: string; name: string; role: string } | null;
 
@@ -34,7 +35,6 @@ import {
   SquareKanban,
   ShieldCheck,
   Search,
-  Bell,
   LogOut,
   Menu,
   X,
@@ -237,10 +237,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user?:
           </div>
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle />
-            <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted">
-              <Bell size={20} />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-red" />
-            </button>
+            <NotificationsBell />
             <div className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 hover:bg-muted">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
                 {initials(displayName)}
@@ -256,6 +253,17 @@ export function AppShell({ children, user }: { children: React.ReactNode; user?:
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>
+        <footer className="border-t border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
+            <div className="flex items-center gap-2">
+              <Logo size={22} />
+              <span className="text-xs text-muted-foreground">
+                © {new Date().getFullYear()} <span className="font-semibold text-foreground">PT. Arowana Bintang Perdana</span>. Hak cipta dilindungi.
+              </span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Sistem Manajemen Outsourcing · ABP</span>
+          </div>
+        </footer>
       </div>
 
       <OnboardingQuest />
