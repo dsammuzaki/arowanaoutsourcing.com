@@ -29,6 +29,7 @@ import type {
 } from "@/lib/data";
 import { priorityMeta, approvalMeta } from "@/lib/data";
 import { tanggal, initials } from "@/lib/format";
+import { FilterBar, type Filter, type FilterFieldDef } from "@/components/ui/filter-token-bar";
 
 const APPROVERS = ["Zaenudin ZAI", "Agus Hidayatulloh", "Rifal Riyadi"];
 const ASSIGNEES = ["Agus Hidayatulloh", "Rifal Riyadi", "Masturoh HS, S.Pd.I", "Zaenudin ZAI"];
@@ -47,14 +48,66 @@ export function KanbanBoard({
   const router = useRouter();
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
   const [view, setView] = useState<"tabel" | "papan" | "harian">("tabel");
-  const [filter, setFilter] = useState<string>("all");
+  const [filters, setFilters] = useState<Filter[]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<KanbanColKey | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   const groupById = useMemo(() => Object.fromEntries(groups.map((g) => [g.id, g])), [groups]);
-  const visible = filter === "all" ? tasks : tasks.filter((t) => t.projectId === filter);
+
+  const dot = (color: string) => (
+    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+  );
+  const assignees = useMemo(
+    () => Array.from(new Set(tasks.map((t) => t.assignee).filter(Boolean))) as string[],
+    [tasks]
+  );
+  const OPS = [
+    { value: "is", label: "adalah" },
+    { value: "is_not", label: "bukan" },
+    { value: "is_any", label: "salah satu dari", multi: true },
+  ];
+  const filterFields: FilterFieldDef[] = useMemo(
+    () => [
+      { id: "status", label: "Status", icon: dot("#64748b"), operators: OPS, options: columns.map((c) => ({ value: c.key, label: c.label, glyph: dot(c.color) })) },
+      {
+        id: "priority",
+        label: "Prioritas",
+        icon: dot("#c69a34"),
+        operators: OPS,
+        options: (Object.keys(priorityMeta) as Priority[]).map((p) => ({ value: p, label: priorityMeta[p].label })),
+      },
+      { id: "proyek", label: "Proyek", icon: dot("#1a7d9c"), operators: OPS, options: groups.map((g) => ({ value: g.id, label: g.name, glyph: dot(g.color) })) },
+      { id: "assignee", label: "Penanggung jawab", icon: dot("#8e7cc3"), operators: OPS, options: assignees.map((a) => ({ value: a, label: a })) },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [columns, groups, assignees]
+  );
+
+  const visible = useMemo(
+    () =>
+      tasks.filter((t) =>
+        filters.every((f) => {
+          if (!f.values.length) return true;
+          const v =
+            f.field === "status" ? t.column : f.field === "priority" ? t.priority : f.field === "proyek" ? t.projectId : f.field === "assignee" ? t.assignee : undefined;
+          switch (f.operator) {
+            case "is":
+              return v === f.values[0];
+            case "is_not":
+              return v !== f.values[0];
+            case "is_any":
+              return f.values.includes(v as string);
+            case "is_none":
+              return !f.values.includes(v as string);
+            default:
+              return true;
+          }
+        })
+      ),
+    [tasks, filters]
+  );
   const detail = tasks.find((t) => t.id === detailId) || null;
 
   function updateTask(id: string, patch: Partial<ProjectTask>) {
@@ -112,26 +165,22 @@ export function KanbanBoard({
             <ListTodo size={16} /> Monitoring Harian
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} className="input w-auto">
-            <option value="all">Semua Proyek</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-          <button className="btn-primary" onClick={() => setCreating(true)}>
-            <Plus size={16} /> Tugas
-          </button>
-        </div>
+        <button className="btn-primary" onClick={() => setCreating(true)}>
+          <Plus size={16} /> Tugas
+        </button>
+      </div>
+
+      {/* Filter token bar ala Linear */}
+      <div className="mb-5 flex items-center gap-2 overflow-x-auto rounded-xl border border-border bg-card px-3 py-2">
+        <span className="shrink-0 text-xs font-semibold text-muted-foreground">Filter</span>
+        <FilterBar fields={filterFields} value={filters} onChange={setFilters} aria-label="Filter tugas proyek" />
       </div>
 
       {view === "tabel" ? (
         <TableView
           columns={columns}
           tasks={visible}
-          groups={groups.filter((g) => filter === "all" || g.id === filter)}
+          groups={groups}
           onOpen={setDetailId}
           onStatus={(id, col) => moveTask(id, col)}
         />
