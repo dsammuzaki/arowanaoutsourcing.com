@@ -32,6 +32,7 @@ import {
   FileClock,
   Info,
   SquareKanban,
+  ShieldCheck,
   Search,
   Bell,
   LogOut,
@@ -39,9 +40,13 @@ import {
   X,
   Sun,
   Moon,
+  type LucideIcon,
 } from "lucide-react";
 
-const nav = [
+type NavItem = { href: string; label: string; Icon: LucideIcon; roles?: string[] };
+type NavSection = { group: string; items: NavItem[] };
+
+const nav: NavSection[] = [
   { group: "Utama", items: [{ href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard }] },
   {
     group: "Operasional",
@@ -72,22 +77,34 @@ const nav = [
   {
     group: "Sistem",
     items: [
+      { href: "/akun", label: "Manajemen Akun", Icon: ShieldCheck, roles: ["super_admin"] },
       { href: "/about", label: "Tentang ABP", Icon: Info },
       { href: "/pengaturan", label: "Pengaturan", Icon: Settings },
     ],
   },
 ];
 
-function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function NavLinks({
+  pathname,
+  role,
+  onNavigate,
+}: {
+  pathname: string;
+  role?: string;
+  onNavigate?: () => void;
+}) {
   return (
     <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
-      {nav.map((section) => (
+      {nav.map((section) => {
+        const items = section.items.filter((it) => !it.roles || (role && it.roles.includes(role)));
+        if (items.length === 0) return null;
+        return (
         <div key={section.group}>
           <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-white/35">
             {section.group}
           </p>
           <div className="space-y-1">
-            {section.items.map(({ href, label, Icon }) => {
+            {items.map(({ href, label, Icon }) => {
               const active = pathname === href || pathname.startsWith(href + "/");
               return (
                 <Link
@@ -110,12 +127,21 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }
 
-function SidebarInner({ onNavigate, onLogout }: { onNavigate?: () => void; onLogout?: () => void }) {
+function SidebarInner({
+  role,
+  onNavigate,
+  onLogout,
+}: {
+  role?: string;
+  onNavigate?: () => void;
+  onLogout?: () => void;
+}) {
   const pathname = usePathname();
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -128,7 +154,7 @@ function SidebarInner({ onNavigate, onLogout }: { onNavigate?: () => void; onLog
           <p className="text-[11px] text-teal-soft">Outsourcing System</p>
         </div>
       </div>
-      <NavLinks pathname={pathname} onNavigate={onNavigate} />
+      <NavLinks pathname={pathname} role={role} onNavigate={onNavigate} />
       <div className="border-t border-white/10 p-3">
         <button
           onClick={onLogout}
@@ -178,7 +204,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user?:
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 lg:block">
         <div className="fixed h-screen w-64">
-          <SidebarInner onLogout={handleLogout} />
+          <SidebarInner role={user?.role} onLogout={handleLogout} />
         </div>
       </aside>
 
@@ -187,7 +213,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user?:
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-navy/70" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-64">
-            <SidebarInner onNavigate={() => setOpen(false)} onLogout={handleLogout} />
+            <SidebarInner role={user?.role} onNavigate={() => setOpen(false)} onLogout={handleLogout} />
           </div>
         </div>
       )}
