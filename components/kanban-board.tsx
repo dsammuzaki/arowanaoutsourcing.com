@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createTask, moveTask as moveTaskAction, setApproval } from "@/app/(app)/proyek/actions";
 import {
   Plus,
   SquareKanban,
@@ -32,11 +34,14 @@ export function KanbanBoard({
   columns,
   groups,
   tasks: initialTasks,
+  persist = false,
 }: {
   columns: KanbanColumn[];
   groups: ProjectGroup[];
   tasks: ProjectTask[];
+  persist?: boolean;
 }) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
   const [view, setView] = useState<"papan" | "harian">("papan");
   const [filter, setFilter] = useState<string>("all");
@@ -49,11 +54,29 @@ export function KanbanBoard({
   const visible = filter === "all" ? tasks : tasks.filter((t) => t.projectId === filter);
   const detail = tasks.find((t) => t.id === detailId) || null;
 
-  function moveTask(id: string, column: KanbanColKey) {
-    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, column } : t)));
-  }
   function updateTask(id: string, patch: Partial<ProjectTask>) {
     setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }
+
+  async function moveTask(id: string, column: KanbanColKey) {
+    const prev = tasks.find((t) => t.id === id)?.column;
+    updateTask(id, { column }); // optimistic
+    if (persist) {
+      const res = await moveTaskAction(id, column);
+      if (!res.ok && prev) updateTask(id, { column: prev });
+    }
+  }
+
+  async function changeApproval(id: string, status: ApprovalStatus) {
+    const prev = tasks.find((t) => t.id === id)?.approvalStatus;
+    updateTask(id, { approvalStatus: status }); // optimistic
+    if (persist) {
+      const res = await setApproval(id, status);
+      if (!res.ok) {
+        if (prev) updateTask(id, { approvalStatus: prev });
+        alert(res.error || "Gagal memperbarui approval.");
+      }
+    }
   }
 
   return (
@@ -196,7 +219,7 @@ export function KanbanBoard({
                 <span className="text-xs text-muted-foreground">Pindah ke:</span>
                 <select
                   value={detail.column}
-                  onChange={(e) => updateTask(detail.id, { column: e.target.value as KanbanColKey })}
+                  onChange={(e) => moveTask(detail.id, e.target.value as KanbanColKey)}
                   className="input w-auto py-1.5 text-sm"
                 >
                   {columns.map((c) => (
@@ -207,10 +230,7 @@ export function KanbanBoard({
                 </select>
               </div>
               {detail.approvalStatus === "draft" && (
-                <button
-                  className="btn-outline"
-                  onClick={() => updateTask(detail.id, { approvalStatus: "menunggu" })}
-                >
+                <button className="btn-outline" onClick={() => changeApproval(detail.id, "menunggu")}>
                   <Send size={15} /> Kirim untuk Approval
                 </button>
               )}
@@ -218,13 +238,13 @@ export function KanbanBoard({
                 <div className="flex gap-2">
                   <button
                     className="btn bg-emerald-600 text-white hover:bg-emerald-700"
-                    onClick={() => updateTask(detail.id, { approvalStatus: "disetujui" })}
+                    onClick={() => changeApproval(detail.id, "disetujui")}
                   >
                     <Check size={15} /> Setujui
                   </button>
                   <button
                     className="btn bg-brand-red text-white hover:bg-brand-reddark"
-                    onClick={() => updateTask(detail.id, { approvalStatus: "ditolak" })}
+                    onClick={() => changeApproval(detail.id, "ditolak")}
                   >
                     <XIcon size={15} /> Tolak
                   </button>
@@ -304,9 +324,28 @@ export function KanbanBoard({
         onClose={() => setCreating(false)}
         columns={columns}
         groups={groups}
-        onCreate={(t) => {
-          setTasks((ts) => [{ ...t, id: `t-${Date.now()}` }, ...ts]);
-          setCreating(false);
+        onCreate={async (t) => {
+          if (persist) {
+            const res = await createTask({
+              projectId: t.projectId,
+              title: t.title,
+              desc: t.desc,
+              column: t.column,
+              priority: t.priority,
+              assignee: t.assignee,
+              due: t.due,
+              approver: t.approver,
+            });
+            if (res.ok) {
+              setCreating(false);
+              router.refresh();
+            } else {
+              alert(res.error || "Gagal menyimpan tugas.");
+            }
+          } else {
+            setTasks((ts) => [{ ...t, id: `t-${Date.now()}` }, ...ts]);
+            setCreating(false);
+          }
         }}
       />
     </>
