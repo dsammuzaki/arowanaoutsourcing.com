@@ -146,10 +146,39 @@ body {
   animation: modalPanelIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Blob mengambang + teks berkilau untuk panel login */
+@keyframes floatA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(24px, -28px) scale(1.06); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-22px, 20px) scale(1.08); }
+}
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes textShine {
+  to { background-position: 200% center; }
+}
+.float-a { animation: floatA 13s ease-in-out infinite; }
+.float-b { animation: floatB 16s ease-in-out infinite; }
+.floaty { animation: floaty 4.5s ease-in-out infinite; }
+.text-shine {
+  background: linear-gradient(90deg, #d3e9f0, #ffffff, #e6c46e, #ffffff, #d3e9f0);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: textShine 7s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-anim { animation: none; }
   .pulse-dot { animation: none; opacity: 1; }
   .modal-overlay-in, .modal-panel-in { animation: none; }
+  .float-a, .float-b, .floaty, .text-shine { animation: none; }
 }
 
 /* Cetak: sembunyikan navigasi & tombol, tampilkan konten saja — output A4 rapi */

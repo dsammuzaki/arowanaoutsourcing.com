@@ -8,6 +8,36 @@ const configured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 );
 
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "";
+const siteUrl = (path: string) =>
+  `${SITE || (typeof window !== "undefined" ? window.location.origin : "")}${path}`;
+
+function GoogleButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.89 2.68-6.62z" />
+          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z" />
+          <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z" />
+          <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" />
+        </svg>
+        Lanjut dengan Google
+      </button>
+      <div className="my-4 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">atau</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+    </>
+  );
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("superadmin@arowanabintang.co.id");
@@ -18,6 +48,17 @@ export function LoginForm() {
   const [resetSent, setResetSent] = useState(false);
   const [name, setName] = useState("");
   const [signupSent, setSignupSent] = useState(false);
+
+  async function onGoogle() {
+    setError("");
+    if (!configured) return setError("Login Google belum aktif di mode demo.");
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: siteUrl("/auth/callback?next=/dashboard") },
+    });
+    if (error) setError(error.message);
+  }
 
   async function onSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -31,7 +72,7 @@ export function LoginForm() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name.trim() }, emailRedirectTo: `${window.location.origin}/` },
+      options: { data: { full_name: name.trim() }, emailRedirectTo: siteUrl("/") },
     });
     setLoading(false);
     if (error) return setError(error.message);
@@ -81,7 +122,7 @@ export function LoginForm() {
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: siteUrl("/reset-password"),
     });
     setLoading(false);
     if (error) {
@@ -109,7 +150,11 @@ export function LoginForm() {
             </button>
           </div>
         ) : (
-          <form className="mt-8 space-y-4" onSubmit={onSignup}>
+          <>
+          <div className="mt-8">
+            <GoogleButton onClick={onGoogle} />
+          </div>
+          <form className="space-y-4" onSubmit={onSignup}>
             <div>
               <label className="label">Nama Lengkap</label>
               <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama Anda" />
@@ -130,6 +175,7 @@ export function LoginForm() {
               Sudah punya akun? Masuk
             </button>
           </form>
+          </>
         )}
       </>
     );
@@ -200,7 +246,10 @@ export function LoginForm() {
         Selamat datang kembali. Silakan masukkan kredensial Anda.
       </p>
 
-      <form className="mt-8 space-y-4" onSubmit={onSubmit}>
+      <div className="mt-8">
+        <GoogleButton onClick={onGoogle} />
+      </div>
+      <form className="space-y-4" onSubmit={onSubmit}>
         <div>
           <label className="label">Email</label>
           <input

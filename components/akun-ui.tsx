@@ -332,8 +332,9 @@ function ResetPasswordModal({ row, onClose }: { row: AccountRow; onClose: () => 
     setEmailing(true);
     try {
       const supabase = createClient();
+      const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { error } = await supabase.auth.resetPasswordForEmail(row.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${base}/reset-password`,
       });
       if (error) setErr(error.message);
       else setEmailSent(true);
