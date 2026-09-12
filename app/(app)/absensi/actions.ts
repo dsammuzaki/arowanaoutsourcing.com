@@ -39,7 +39,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=id`,
       {
-        headers: { "User-Agent": "ABP-Outsourcing-Attendance/1.0" },
+        headers: { "User-Agent": "BSU-Outsourcing-Attendance/1.0" },
         signal: AbortSignal.timeout(6000),
       }
     );

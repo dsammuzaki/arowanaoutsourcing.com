@@ -29,7 +29,7 @@ type Step = {
 const steps: Step[] = [
   {
     icon: Sparkles,
-    title: "Selamat datang di Sistem ABP 👋",
+    title: "Selamat datang di Sistem BSU 👋",
     desc: "Panduan singkat ini menunjukkan cara memakai aplikasi dari nol — mulai dari mengisi data karyawan sampai payroll, invoice, proyek, dan cuti. Bisa dilewati kapan saja.",
   },
   {
@@ -70,7 +70,7 @@ const steps: Step[] = [
   {
     icon: Rocket,
     title: "Siap mulai! 🚀",
-    desc: "Itu inti aplikasinya. Mulai dari menambahkan karyawan pertama Anda. Panduan ini bisa dibuka lagi lewat menu Tentang ABP bila perlu.",
+    desc: "Itu inti aplikasinya. Mulai dari menambahkan karyawan pertama Anda. Panduan ini bisa dibuka lagi lewat menu Tentang BSU bila perlu.",
     href: "/karyawan",
     hrefLabel: "Mulai: Tambah Karyawan",
   },

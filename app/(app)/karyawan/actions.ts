@@ -49,7 +49,7 @@ export async function createEmployee(formData: FormData): Promise<{ ok: boolean;
 
   const row = {
     id,
-    nik: g("nik") || "ABP" + Date.now(),
+    nik: g("nik") || "BSU" + Date.now(),
     name,
     gender: g("gender", "L") === "P" ? "P" : "L",
     position: g("position"),

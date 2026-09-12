@@ -142,7 +142,7 @@ export default async function KaryawanDetailPage({
       <div className="mb-4 hidden items-center gap-3 border-b-2 border-navy pb-3 print:flex">
         <Logo size={44} />
         <div>
-          <p className="text-base font-bold text-navy">PT. Arowana Bintang Perdana</p>
+          <p className="text-base font-bold text-navy">PT. Barata Sakti Utama</p>
           <p className="text-[11px] text-gray-500">Profil & Monitoring Kontrak Tenaga Kerja</p>
         </div>
       </div>

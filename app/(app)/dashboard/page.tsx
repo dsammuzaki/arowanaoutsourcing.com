@@ -48,21 +48,21 @@ import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 const k = dashboardKpis;
 
 async function getGreetName(): Promise<string> {
-  if (!isSupabaseConfigured()) return "Tim ABP";
+  if (!isSupabaseConfigured()) return "Tim BSU";
   try {
     const supabase = createClient(await cookies());
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return "Tim ABP";
+    if (!user) return "Tim BSU";
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
       .eq("id", user.id)
       .single();
-    return profile?.full_name || user.email?.split("@")[0] || "Tim ABP";
+    return profile?.full_name || user.email?.split("@")[0] || "Tim BSU";
   } catch {
-    return "Tim ABP";
+    return "Tim BSU";
   }
 }
 
@@ -244,7 +244,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-white/60">Selamat datang kembali,</p>
             <h2 className="mt-0.5 text-2xl font-bold">{greetName} 👋</h2>
             <p className="mt-1 text-sm text-white/60">
-              Berikut ringkasan operasional PT. Arowana Bintang Perdana hari ini.
+              Berikut ringkasan operasional PT. Barata Sakti Utama hari ini.
             </p>
             <div className="mt-3 flex items-center gap-2">
               <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-emerald-300">

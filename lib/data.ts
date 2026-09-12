@@ -1,5 +1,5 @@
 // =====================================================================
-// Mock data — Sistem Manajemen Outsourcing PT. Arowana Bintang Perdana
+// Mock data — Sistem Manajemen Outsourcing PT. Barata Sakti Utama
 // UI/UX prototype. Semua angka contoh, tidak terhubung backend.
 // =====================================================================
 
@@ -49,9 +49,9 @@ export interface Employee {
 export const legalEntities: LegalEntity[] = [
   {
     id: "abp",
-    name: "PT. Arowana Bintang Perdana",
+    name: "PT. Barata Sakti Utama",
     npwp: "85.967.224.8-435.000",
-    invoicePrefix: "ABP",
+    invoicePrefix: "BSU",
   },
   {
     id: "cpp",
@@ -155,7 +155,7 @@ function buildEmployees(): Employee[] {
           : 4000000 + Math.floor(seeded(counter + 3) * 600000);
       list.push({
         id: `emp-${counter + 1}`,
-        nik: `ABP${String(2018 + (counter % 6))}${String(counter + 1).padStart(4, "0")}`,
+        nik: `BSU${String(2018 + (counter % 6))}${String(counter + 1).padStart(4, "0")}`,
         name: `${firstNames[counter % firstNames.length]} ${lastNames[(counter * 3) % lastNames.length]}`,
         gender,
         position: positions[i % positions.length],
@@ -833,7 +833,7 @@ export function contractNumber(emp: Employee): string {
   const entity = legalEntities.find((e) => e.id === client?.entityId);
   const seq = emp.id.split("-")[1].padStart(4, "0");
   const year = new Date(emp.joinDate).getFullYear();
-  return `KTR/${entity?.invoicePrefix ?? "ABP"}/${year}/${seq}`;
+  return `KTR/${entity?.invoicePrefix ?? "BSU"}/${year}/${seq}`;
 }
 
 // Ringkasan absensi 30 hari terakhir untuk 1 karyawan (deterministik)
@@ -859,13 +859,13 @@ export function attendanceSummaryFor(empId: string) {
   return { hadir, izin, sakit, alpha, total: 30, rate: Math.round((hadir / 30) * 100), days };
 }
 
-// ---------- Profil perusahaan (Tentang ABP) ----------
+// ---------- Profil perusahaan (Tentang BSU) ----------
 export const aboutCompany = {
-  name: "PT. Arowana Bintang Perdana",
+  name: "PT. Barata Sakti Utama",
   tagline: "Alih Daya · Driver Management · Security Services · General Cleaning · Man Power Supply",
   since: 2018,
   about:
-    "PT. Arowana Bintang Perdana berkomitmen menjadi mitra tepat serta memberikan pelayanan terbaik bagi setiap perusahaan dalam segala kebutuhan pengelolaan tenaga kerja dan solusi outsourcing.",
+    "PT. Barata Sakti Utama berkomitmen menjadi mitra tepat serta memberikan pelayanan terbaik bagi setiap perusahaan dalam segala kebutuhan pengelolaan tenaga kerja dan solusi outsourcing.",
   visi: "Menjadi perusahaan pelayanan dan pengelolaan di bidang jasa yang berkompeten, kredibel, visioner, dan profesional.",
   misi: [
     "Memberikan layanan terbaik bagi semua perusahaan mitra/klien.",
@@ -874,7 +874,7 @@ export const aboutCompany = {
     "Meningkatkan daya saing perusahaan dalam pengelolaan dan pelayanan jasa.",
   ],
   legalitas: [
-    { label: "Nama Perusahaan", value: "PT. Arowana Bintang Perdana" },
+    { label: "Nama Perusahaan", value: "PT. Barata Sakti Utama" },
     { label: "Akta Pendirian", value: "Notaris Fidya Rahmawati, S.H., M.Kn. No. 13, 28 Okt 2020" },
     { label: "SK Kemenkumham", value: "AHU-0076895.AH.01.02 Tahun 2020" },
     { label: "NPWP Perusahaan", value: "85.967.224.8-435.000" },

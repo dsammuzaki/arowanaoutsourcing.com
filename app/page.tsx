@@ -16,7 +16,7 @@ export default function LoginPage() {
         <div className="relative flex items-center gap-3">
           <Logo size={44} />
           <div className="leading-tight">
-            <p className="text-lg font-bold">Arowana Bintang Perdana</p>
+            <p className="text-lg font-bold">Barata Sakti Utama</p>
             <p className="text-xs text-teal-soft">Sistem Manajemen Outsourcing</p>
           </div>
         </div>
@@ -44,7 +44,7 @@ export default function LoginPage() {
           </div>
         </div>
         <p className="relative text-xs text-white/40">
-          © 2026 PT. Arowana Bintang Perdana · Berdiri sejak 2018
+          © 2026 PT. Barata Sakti Utama · Berdiri sejak 2018
         </p>
       </div>
 
@@ -54,7 +54,7 @@ export default function LoginPage() {
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <Logo size={40} />
             <div className="leading-tight">
-              <p className="font-bold text-foreground">Arowana Bintang Perdana</p>
+              <p className="font-bold text-foreground">Barata Sakti Utama</p>
               <p className="text-xs text-primary">Outsourcing System</p>
             </div>
           </div>

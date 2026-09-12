@@ -7,7 +7,7 @@ import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
 
 const ALLOWED = ["super_admin", "finance", "operation"];
 const BPJS_CLIENT_PCT = 3.7 + 0.24 + 0.3 + 2 + 4; // = 10.24
-const ENTITY_PREFIX: Record<string, string> = { abp: "ABP", cpp: "CPP" };
+const ENTITY_PREFIX: Record<string, string> = { abp: "BSU", cpp: "CPP" };
 
 export async function createInvoice(formData: FormData): Promise<{ ok: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase belum aktif." };
@@ -40,7 +40,7 @@ export async function createInvoice(formData: FormData): Promise<{ ok: boolean; 
   const total = dpp + ppn;
   const pph23 = r((mgmt * (client.pph23_pct ?? 2)) / 100);
   const grand = total - pph23;
-  const prefix = ENTITY_PREFIX[client.entity_id ?? "abp"] ?? "ABP";
+  const prefix = ENTITY_PREFIX[client.entity_id ?? "abp"] ?? "BSU";
   const seq = String(Date.now()).slice(-4);
 
   const row = {

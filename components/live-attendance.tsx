@@ -143,9 +143,9 @@ function stampPhoto(
   // watermark kiri-atas
   ctx.font = `700 ${fsB}px system-ui, sans-serif`;
   ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.fillText("ABP · Absensi", pad + 1, pad + 1);
+  ctx.fillText("BSU · Absensi", pad + 1, pad + 1);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("ABP · Absensi", pad, pad);
+  ctx.fillText("BSU · Absensi", pad, pad);
 
   return frame.toDataURL("image/jpeg", 0.85);
 }

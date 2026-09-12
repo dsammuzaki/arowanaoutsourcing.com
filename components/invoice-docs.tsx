@@ -57,7 +57,7 @@ const signature = (
     <div className="text-center text-sm">
       <p className="text-gray-600">Hormat kami,</p>
       <div className="h-16" />
-      <p className="font-semibold text-navy">PT. Arowana Bintang Perdana</p>
+      <p className="font-semibold text-navy">PT. Barata Sakti Utama</p>
       <p className="text-xs text-gray-500">Finance & Administration</p>
     </div>
   </div>
@@ -193,7 +193,7 @@ export function InvoiceDocsToolbar({
               <div>
                 <p className="text-gray-600">Diserahkan oleh,</p>
                 <div className="h-16" />
-                <p className="border-t border-gray-400 pt-1 font-semibold text-navy">PT. Arowana Bintang Perdana</p>
+                <p className="border-t border-gray-400 pt-1 font-semibold text-navy">PT. Barata Sakti Utama</p>
               </div>
               <div>
                 <p className="text-gray-600">Diterima oleh,</p>

@@ -3,14 +3,14 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "ABP Outsourcing — Sistem Manajemen",
+  title: "BSU Outsourcing — Sistem Manajemen",
   description:
-    "Sistem Manajemen Outsourcing PT. Arowana Bintang Perdana — payroll, invoice klien, absensi, dan pencairan gaji dalam satu platform.",
-  applicationName: "ABP Outsourcing",
+    "Sistem Manajemen Outsourcing PT. Barata Sakti Utama — payroll, invoice klien, absensi, dan pencairan gaji dalam satu platform.",
+  applicationName: "BSU Outsourcing",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "ABP Outsourcing",
+    title: "BSU Outsourcing",
     statusBarStyle: "black-translucent",
   },
   icons: {

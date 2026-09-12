@@ -78,7 +78,7 @@ const nav: NavSection[] = [
     group: "Sistem",
     items: [
       { href: "/akun", label: "Manajemen Akun", Icon: ShieldCheck, roles: ["super_admin"] },
-      { href: "/about", label: "Tentang ABP", Icon: Info },
+      { href: "/about", label: "Tentang BSU", Icon: Info },
       { href: "/pengaturan", label: "Pengaturan", Icon: Settings },
     ],
   },
@@ -149,7 +149,7 @@ function SidebarInner({
         <Logo size={38} />
         <div className="leading-tight">
           <p className="text-[13px] font-bold leading-tight text-white">
-            Arowana Bintang Perdana
+            Barata Sakti Utama
           </p>
           <p className="text-[11px] text-teal-soft">Outsourcing System</p>
         </div>
@@ -262,10 +262,10 @@ export function AppShell({
             <div className="flex items-center gap-2">
               <Logo size={22} />
               <span className="text-xs text-muted-foreground">
-                © {new Date().getFullYear()} <span className="font-semibold text-foreground">PT. Arowana Bintang Perdana</span>. Hak cipta dilindungi.
+                © {new Date().getFullYear()} <span className="font-semibold text-foreground">PT. Barata Sakti Utama</span>. Hak cipta dilindungi.
               </span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Sistem Manajemen Outsourcing · ABP</span>
+            <span className="text-[11px] text-muted-foreground">Sistem Manajemen Outsourcing · BSU</span>
           </div>
         </footer>
       </div>

@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ABP Outsourcing — Sistem Manajemen",
-    short_name: "ABP",
+    name: "BSU Outsourcing — Sistem Manajemen",
+    short_name: "BSU",
     description:
-      "Sistem Manajemen Outsourcing PT. Arowana Bintang Perdana — payroll, invoice, absensi, dan pencairan gaji.",
+      "Sistem Manajemen Outsourcing PT. Barata Sakti Utama — payroll, invoice, absensi, dan pencairan gaji.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

@@ -117,7 +117,7 @@ export default function PencairanPage() {
           <div className="hidden items-center gap-3 border-b-2 border-navy px-5 py-4 print:flex">
             <Logo size={40} />
             <div>
-              <p className="text-base font-bold text-navy">PT. Arowana Bintang Perdana</p>
+              <p className="text-base font-bold text-navy">PT. Barata Sakti Utama</p>
               <p className="text-[11px] text-gray-500">Tanda Terima Pembayaran Gaji Tunai · Periode Agustus 2026</p>
             </div>
           </div>
