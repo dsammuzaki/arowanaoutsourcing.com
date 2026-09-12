@@ -34,7 +34,9 @@ import {
   candidates,
   employeeById,
   presentToday,
+  calcPayroll,
 } from "@/lib/data";
+import { getEmployees } from "@/lib/server-data";
 import {
   WeeklyBars,
   AttendanceDonut,
@@ -227,6 +229,22 @@ function DonutCard({
 
 export default async function DashboardPage() {
   const greetName = await getGreetName();
+
+  // Angka utama dari data karyawan asli
+  const emps = await getEmployees();
+  const activeCount = emps.filter((e) => e.status === "aktif").length;
+  const payrollTotal = emps.filter((e) => e.status === "aktif").reduce((s, e) => s + calcPayroll(e).takeHome, 0);
+  const clientCount = new Set(emps.map((e) => e.clientId).filter(Boolean)).size;
+  const realTiles = tiles.map((t) =>
+    t.label === "Payroll Bulan Ini"
+      ? { ...t, value: rupiah(payrollTotal, { compact: true }), sub: `${activeCount} karyawan aktif` }
+      : t.label === "Tenaga Kerja Aktif"
+      ? { ...t, value: String(activeCount) }
+      : t.label === "Klien"
+      ? { ...t, value: String(clientCount || k.totalClients) }
+      : t
+  );
+
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
@@ -273,7 +291,7 @@ export default async function DashboardPage() {
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        {tiles.map((t) => {
+        {realTiles.map((t) => {
           const inner = (
             <div className={`h-full rounded-xl border p-3 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-soft sm:p-5 ${tintMap[t.tint]}`}>
               <div className="mb-2 flex items-start justify-between sm:mb-4">

@@ -3,8 +3,7 @@ import { PageHeader, Card, Badge, StatusPill, Avatar } from "@/components/ui";
 import { FileClock, AlertTriangle, CheckCircle2, CalendarX2, Search, ChevronRight } from "lucide-react";
 import { ExportButton } from "@/components/export-button";
 import {
-  employeeContracts,
-  kontrakStats,
+  deriveContract,
   contractStatusLabel,
   contractTypeLabel,
   formatDurasi,
@@ -12,10 +11,10 @@ import {
   clients,
   REF_DATE,
 } from "@/lib/data";
+import { getEmployees } from "@/lib/server-data";
 import { tanggal } from "@/lib/format";
 
-// urutan: paling mendesak dulu (sisa hari terkecil), lalu yang panjang
-const rows = [...employeeContracts].sort((a, b) => a.remainingDays - b.remainingDays);
+export const dynamic = "force-dynamic";
 
 function barColor(status: string) {
   if (status === "berakhir") return "#c0392b";
@@ -23,7 +22,20 @@ function barColor(status: string) {
   return "#1a7d9c";
 }
 
-export default function KontrakPage() {
+export default async function KontrakPage() {
+  const employees = await getEmployees();
+  // urutan: paling mendesak dulu (sisa hari terkecil)
+  const rows = employees
+    .filter((e) => e.status === "aktif")
+    .map((e) => deriveContract(e))
+    .sort((a, b) => a.remainingDays - b.remainingDays);
+  const kontrakStats = {
+    total: rows.length,
+    aktif: rows.filter((c) => c.status === "aktif").length,
+    segeraBerakhir: rows.filter((c) => c.status === "segera_berakhir").length,
+    berakhir: rows.filter((c) => c.status === "berakhir").length,
+  };
+
   const stats = [
     { label: "Total Kontrak", value: kontrakStats.total, Icon: FileClock, tone: "teal" },
     { label: "Aktif", value: kontrakStats.aktif, Icon: CheckCircle2, tone: "teal" },
