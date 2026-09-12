@@ -1,29 +1,33 @@
 import { PageHeader, Card, Badge } from "@/components/ui";
 import { IconBank, IconWallet, IconCheck, IconPrint } from "@/components/icons";
 import { Logo } from "@/components/logo";
-import { employees, calcPayroll } from "@/lib/data";
+import { calcPayroll } from "@/lib/data";
+import { getEmployees } from "@/lib/server-data";
 import { rupiah } from "@/lib/format";
 import { ExportButton } from "@/components/export-button";
 import { PrintButton } from "@/components/print-button";
 import { ProsesPencairanButton } from "@/components/pencairan-actions";
 
-const lines = employees.filter((e) => e.status === "aktif").map((e) => calcPayroll(e));
-const transfer = lines.filter((l) => l.method === "transfer");
-const tunai = lines.filter((l) => l.method === "tunai");
+export const dynamic = "force-dynamic";
 
-// Group transfer by bank
-const byBank = transfer.reduce<Record<string, { count: number; total: number }>>((acc, l) => {
-  const b = l.employee.bankName;
-  acc[b] = acc[b] || { count: 0, total: 0 };
-  acc[b].count++;
-  acc[b].total += l.takeHome;
-  return acc;
-}, {});
+export default async function PencairanPage() {
+  const employees = await getEmployees();
+  const lines = employees.filter((e) => e.status === "aktif").map((e) => calcPayroll(e));
+  const transfer = lines.filter((l) => l.method === "transfer");
+  const tunai = lines.filter((l) => l.method === "tunai");
 
-const totalTransfer = transfer.reduce((s, l) => s + l.takeHome, 0);
-const totalTunai = tunai.reduce((s, l) => s + l.takeHome, 0);
+  // Group transfer by bank
+  const byBank = transfer.reduce<Record<string, { count: number; total: number }>>((acc, l) => {
+    const b = l.employee.bankName;
+    acc[b] = acc[b] || { count: 0, total: 0 };
+    acc[b].count++;
+    acc[b].total += l.takeHome;
+    return acc;
+  }, {});
 
-export default function PencairanPage() {
+  const totalTransfer = transfer.reduce((s, l) => s + l.takeHome, 0);
+  const totalTunai = tunai.reduce((s, l) => s + l.takeHome, 0);
+
   return (
     <>
       <PageHeader

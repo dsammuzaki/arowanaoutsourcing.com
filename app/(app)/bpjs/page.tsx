@@ -1,33 +1,38 @@
 import { PageHeader, Card, Badge } from "@/components/ui";
 import { HeartPulse, ShieldCheck, Building2 } from "lucide-react";
-import { employees, calcPayroll, clients, bpjsRates } from "@/lib/data";
+import { calcPayroll, clients, bpjsRates } from "@/lib/data";
+import { getEmployees } from "@/lib/server-data";
 import { rupiah } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
 
 const CLIENT_RATE = bpjsRates.jhtClient + bpjsRates.jkkClient + bpjsRates.jkmClient + bpjsRates.jpClient + bpjsRates.kesehatanClient;
 
 function bpjsNo(prefix: string, id: string) {
-  const n = id.split("-")[1] ?? "0";
-  return `${prefix}${String(2020 + (Number(n) % 6))}${String(n).padStart(8, "0").slice(-8)}`;
+  const raw = id.split("-")[1] ?? "0";
+  const n = raw.replace(/\D/g, "").slice(-8) || "0";
+  return `${prefix}${String(2020 + (Number(n) % 6))}${n.padStart(8, "0")}`;
 }
 
-const rows = employees
-  .filter((e) => e.status === "aktif")
-  .map((e) => {
-    const p = calcPayroll(e);
-    const iuranPerusahaan = Math.round((p.gross * CLIENT_RATE) / 100);
-    return {
-      id: e.id,
-      name: e.name,
-      position: e.position,
-      clientName: clients.find((c) => c.id === e.clientId)?.name ?? "-",
-      kesNo: bpjsNo("00", e.id),
-      tkNo: bpjsNo("2", e.id),
-      iuranKaryawan: p.bpjsEmployee,
-      iuranPerusahaan,
-    };
-  });
+export default async function BpjsPage() {
+  const employees = await getEmployees();
+  const rows = employees
+    .filter((e) => e.status === "aktif")
+    .map((e) => {
+      const p = calcPayroll(e);
+      const iuranPerusahaan = Math.round((p.gross * CLIENT_RATE) / 100);
+      return {
+        id: e.id,
+        name: e.name,
+        position: e.position,
+        clientName: clients.find((c) => c.id === e.clientId)?.name ?? "-",
+        kesNo: bpjsNo("00", e.id),
+        tkNo: bpjsNo("2", e.id),
+        iuranKaryawan: p.bpjsEmployee,
+        iuranPerusahaan,
+      };
+    });
 
-export default function BpjsPage() {
   const totalKaryawan = rows.reduce((s, r) => s + r.iuranKaryawan, 0);
   const totalPerusahaan = rows.reduce((s, r) => s + r.iuranPerusahaan, 0);
   const stats = [
