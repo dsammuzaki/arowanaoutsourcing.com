@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { UserPlus, Trash2, X, ShieldCheck, Pencil, KeyRound, Eye, EyeOff, RefreshCw, Copy } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { Modal } from "@/components/modal";
+import { Mail } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 import { createAccount, updateRole, deleteAccount, updateAccount, resetPassword } from "@/app/(app)/akun/actions";
 
 function genPassword() {
@@ -322,6 +324,24 @@ function ResetPasswordModal({ row, onClose }: { row: AccountRow; onClose: () => 
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [emailing, setEmailing] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+
+  async function sendResetEmail() {
+    setErr("");
+    setEmailing(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(row.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) setErr(error.message);
+      else setEmailSent(true);
+    } catch {
+      setErr("Gagal mengirim email.");
+    }
+    setEmailing(false);
+  }
 
   async function save() {
     if (pw.length < 8) {
@@ -402,6 +422,22 @@ function ResetPasswordModal({ row, onClose }: { row: AccountRow; onClose: () => 
               </button>
             </div>
           </div>
+
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">atau</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          {emailSent ? (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+              Tautan reset dikirim ke <b>{row.email}</b>. Pengguna dapat menyetel password sendiri lewat email.
+            </p>
+          ) : (
+            <button type="button" className="btn-outline w-full justify-center" onClick={sendResetEmail} disabled={emailing}>
+              <Mail size={15} /> {emailing ? "Mengirim…" : "Kirim tautan reset ke email pengguna"}
+            </button>
+          )}
+
           {err && <p className="text-sm text-brand-red">{err}</p>}
         </div>
       )}

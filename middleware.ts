@@ -35,6 +35,8 @@ export async function middleware(req: NextRequest) {
   if (!allowed) return res; // role penuh — akses semua
 
   const path = req.nextUrl.pathname;
+  // halaman publik/auth selalu boleh (mis. reset password lewat email)
+  if (path === "/" || path.startsWith("/reset-password")) return res;
   const ok = allowed.some((a) => path === a || path.startsWith(a + "/"));
   if (!ok) {
     const dash = req.nextUrl.clone();

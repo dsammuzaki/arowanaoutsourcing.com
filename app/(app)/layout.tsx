@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { AppShell, type ShellUser } from "@/components/app-shell";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
 import type { SearchItem } from "@/components/global-search";
 import { employees as mockEmployees, clients as mockClients, invoices as mockInvoices } from "@/lib/data";
 
@@ -73,10 +74,29 @@ export default async function AppGroupLayout({
       .eq("id", authUser.id)
       .single();
 
+    let role = profile?.role;
+    let name = profile?.full_name;
+
+    // Pendaftar baru (self sign-up) belum punya profil → buat dengan role terbatas 'customer'
+    if (!profile) {
+      const meta = (authUser.user_metadata ?? {}) as { full_name?: string };
+      name = meta.full_name || authUser.email?.split("@")[0] || "Pengguna";
+      role = "customer";
+      if (hasAdmin()) {
+        try {
+          await createAdminClient()
+            .from("profiles")
+            .upsert({ id: authUser.id, full_name: name, role: "customer" }, { onConflict: "id" });
+        } catch {
+          /* abaikan */
+        }
+      }
+    }
+
     user = {
       email: authUser.email ?? "",
-      name: profile?.full_name || authUser.email?.split("@")[0] || "Pengguna",
-      role: profile?.role || "operation",
+      name: name || authUser.email?.split("@")[0] || "Pengguna",
+      role: role || "customer",
     };
   }
 
