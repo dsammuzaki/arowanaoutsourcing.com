@@ -34,7 +34,6 @@ import {
   Wallet,
   Banknote,
   FileText,
-  Handshake,
   Settings,
   UserPlus,
   CalendarDays,
@@ -82,7 +81,6 @@ const nav: NavSection[] = [
       { href: "/pencairan", label: "Pencairan Gaji", Icon: Banknote },
       { href: "/bpjs", label: "BPJS", Icon: HeartPulse },
       { href: "/invoice", label: "Invoice Klien", Icon: FileText },
-      { href: "/fee", label: "Fee / Komisi", Icon: Handshake },
     ],
   },
   {

@@ -17,7 +17,6 @@ const PAGES: SearchItem[] = [
   { label: "Payroll & Slip Gaji", href: "/payroll", kind: "halaman" },
   { label: "Pencairan Gaji", href: "/pencairan", kind: "halaman" },
   { label: "Invoice Klien", href: "/invoice", kind: "halaman" },
-  { label: "Fee / Komisi", href: "/fee", kind: "halaman" },
   { label: "Tentang BSU", href: "/about", kind: "halaman" },
   { label: "Pengaturan", href: "/pengaturan", kind: "halaman" },
 ];

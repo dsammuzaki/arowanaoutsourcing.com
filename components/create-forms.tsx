@@ -6,7 +6,6 @@ import { Plus } from "lucide-react";
 import { Modal } from "./modal";
 import { createJobPosting } from "@/app/(app)/rekrutmen/actions";
 import { createInvoice } from "@/app/(app)/invoice/actions";
-import { createFee } from "@/app/(app)/fee/actions";
 
 type ClientOpt = { id: string; name: string };
 
@@ -147,60 +146,6 @@ export function BuatInvoiceButton({ clients }: { clients: ClientOpt[] }) {
           <p className="text-xs text-muted-foreground">
             BPJS bagian klien, Management Fee, PPN, dan PPh 23 akan dihitung otomatis sesuai kontrak klien.
           </p>
-          <ErrLine err={s.err} />
-        </form>
-      </Modal>
-    </>
-  );
-}
-
-export function CatatFeeButton({ clients }: { clients: ClientOpt[] }) {
-  const s = useSubmit(createFee);
-  return (
-    <>
-      <button className="btn-primary" onClick={() => s.setOpen(true)}>
-        <Plus size={16} /> Catat Fee
-      </button>
-      <Modal
-        open={s.open}
-        onClose={() => s.setOpen(false)}
-        title="Catat Fee / Komisi"
-        subtitle="Total = Dasar × Persentase"
-        footer={
-          <div className="flex justify-end gap-2">
-            <button className="btn-ghost" type="button" onClick={() => s.setOpen(false)}>Batal</button>
-            <button form="fee-form" type="submit" className="btn-primary" disabled={s.loading}>
-              {s.loading ? "Menyimpan…" : "Simpan"}
-            </button>
-          </div>
-        }
-      >
-        <form id="fee-form" onSubmit={s.onSubmit} className="space-y-3">
-          <div>
-            <label className="label">Penerima *</label>
-            <input name="recipient" className="input" required placeholder="mis. Bpk. Adang Suryana" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Klien / Kontrak</label>
-              <select name="client_id" className="input">
-                <option value="">—</option>
-                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Periode</label>
-              <input name="period" className="input" defaultValue="Agustus 2026" />
-            </div>
-            <div>
-              <label className="label">Dasar / MF neto (Rp) *</label>
-              <input name="base" type="number" min="0" className="input" required placeholder="mis. 15000000" />
-            </div>
-            <div>
-              <label className="label">Persentase (%)</label>
-              <input name="fee_pct" type="number" min="0" max="100" step="0.1" className="input" defaultValue={8} />
-            </div>
-          </div>
           <ErrLine err={s.err} />
         </form>
       </Modal>
