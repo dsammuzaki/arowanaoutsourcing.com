@@ -2,9 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Trash2, X, ShieldCheck } from "lucide-react";
+import { UserPlus, Trash2, X, ShieldCheck, Pencil, KeyRound, Eye, EyeOff, RefreshCw, Copy } from "lucide-react";
 import { Badge } from "@/components/ui";
-import { createAccount, updateRole, deleteAccount } from "@/app/(app)/akun/actions";
+import { Modal } from "@/components/modal";
+import { createAccount, updateRole, deleteAccount, updateAccount, resetPassword } from "@/app/(app)/akun/actions";
+
+function genPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%";
+  let s = "";
+  for (let i = 0; i < 12; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
 
 const roleOptions = [
   { value: "super_admin", label: "Super Admin" },
@@ -137,6 +145,8 @@ export function TambahAkunButton() {
 export function AccountsTable({ rows, meId }: { rows: AccountRow[]; meId: string }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState("");
+  const [editRow, setEditRow] = useState<AccountRow | null>(null);
+  const [pwRow, setPwRow] = useState<AccountRow | null>(null);
 
   async function onRole(id: string, role: string) {
     setBusyId(id);
@@ -200,14 +210,30 @@ export function AccountsTable({ rows, meId }: { rows: AccountRow[]; meId: string
                 </td>
                 <td className="td text-muted-foreground">{r.createdAt}</td>
                 <td className="td text-right">
-                  <button
-                    className="rounded-lg p-2 text-muted-foreground hover:bg-brand-red/10 hover:text-brand-red disabled:opacity-40"
-                    disabled={isMe || busyId === r.id}
-                    title={isMe ? "Tidak bisa hapus akun sendiri" : "Hapus akun"}
-                    onClick={() => onDelete(r.id, r.fullName)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex justify-end gap-1">
+                    <button
+                      className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      title="Edit akun"
+                      onClick={() => setEditRow(r)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="rounded-lg p-2 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      title="Reset password"
+                      onClick={() => setPwRow(r)}
+                    >
+                      <KeyRound size={16} />
+                    </button>
+                    <button
+                      className="rounded-lg p-2 text-muted-foreground hover:bg-brand-red/10 hover:text-brand-red disabled:opacity-40"
+                      disabled={isMe || busyId === r.id}
+                      title={isMe ? "Tidak bisa hapus akun sendiri" : "Hapus akun"}
+                      onClick={() => onDelete(r.id, r.fullName)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
@@ -221,6 +247,164 @@ export function AccountsTable({ rows, meId }: { rows: AccountRow[]; meId: string
           )}
         </tbody>
       </table>
+
+      {editRow && <EditAccountModal row={editRow} isMe={editRow.id === meId} onClose={() => setEditRow(null)} onDone={() => { setEditRow(null); router.refresh(); }} />}
+      {pwRow && <ResetPasswordModal row={pwRow} onClose={() => setPwRow(null)} />}
     </div>
+  );
+}
+
+function EditAccountModal({
+  row,
+  isMe,
+  onClose,
+  onDone,
+}: {
+  row: AccountRow;
+  isMe: boolean;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [fullName, setFullName] = useState(row.fullName);
+  const [role, setRole] = useState(row.role);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function save() {
+    setBusy(true);
+    setErr("");
+    const res = await updateAccount(row.id, { fullName, role });
+    setBusy(false);
+    if (res.ok) onDone();
+    else setErr(res.error || "Gagal menyimpan.");
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Edit Akun"
+      subtitle={row.email}
+      footer={
+        <div className="flex justify-end gap-2">
+          <button className="btn-ghost" onClick={onClose} disabled={busy}>Batal</button>
+          <button className="btn-primary" onClick={save} disabled={busy}>{busy ? "Menyimpan…" : "Simpan"}</button>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div>
+          <label className="label">Nama Lengkap</label>
+          <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">Role / Hak Akses</label>
+          <select className="input" value={role} onChange={(e) => setRole(e.target.value)} disabled={isMe}>
+            {roleOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          {isMe && <p className="mt-1 text-xs text-muted-foreground">Role akun sendiri tidak bisa diubah.</p>}
+        </div>
+        <p className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
+          Email tidak diubah di sini. Untuk ganti password, gunakan tombol Reset Password.
+        </p>
+        {err && <p className="text-sm text-brand-red">{err}</p>}
+      </div>
+    </Modal>
+  );
+}
+
+function ResetPasswordModal({ row, onClose }: { row: AccountRow; onClose: () => void }) {
+  const [pw, setPw] = useState("");
+  const [show, setShow] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function save() {
+    if (pw.length < 8) {
+      setErr("Password minimal 8 karakter.");
+      return;
+    }
+    setBusy(true);
+    setErr("");
+    const res = await resetPassword(row.id, pw);
+    setBusy(false);
+    if (res.ok) setDone(true);
+    else setErr(res.error || "Gagal reset password.");
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Reset Password"
+      subtitle={`${row.fullName} · ${row.email}`}
+      footer={
+        done ? (
+          <div className="flex justify-end">
+            <button className="btn-primary" onClick={onClose}>Selesai</button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <button className="btn-ghost" onClick={onClose} disabled={busy}>Batal</button>
+            <button className="btn-primary" onClick={save} disabled={busy}>{busy ? "Menyimpan…" : "Simpan Password"}</button>
+          </div>
+        )
+      }
+    >
+      {done ? (
+        <div className="space-y-3">
+          <div className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+            Password berhasil diperbarui. Bagikan password baru berikut ke pengguna:
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+            <code className="flex-1 truncate font-mono text-sm text-foreground">{pw}</code>
+            <button
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              title="Salin"
+              onClick={() => { navigator.clipboard?.writeText(pw); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+            >
+              <Copy size={15} />
+            </button>
+          </div>
+          {copied && <p className="text-xs text-primary">Tersalin.</p>}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+            Password lama <b>tidak bisa dilihat</b> — tersimpan sebagai hash terenkripsi. Yang bisa dilakukan adalah menyetel password baru di bawah ini.
+          </div>
+          <div>
+            <label className="label">Password Baru (min. 8 karakter)</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  className="input pr-9"
+                  type={show ? "text" : "password"}
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  placeholder="Ketik atau Generate"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShow((s) => !s)}
+                  title={show ? "Sembunyikan" : "Lihat"}
+                >
+                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <button type="button" className="btn-outline whitespace-nowrap" onClick={() => { setPw(genPassword()); setShow(true); }}>
+                <RefreshCw size={15} /> Generate
+              </button>
+            </div>
+          </div>
+          {err && <p className="text-sm text-brand-red">{err}</p>}
+        </div>
+      )}
+    </Modal>
   );
 }

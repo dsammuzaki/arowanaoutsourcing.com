@@ -80,3 +80,40 @@ export async function deleteAccount(id: string): Promise<{ ok: boolean; error?: 
   revalidatePath("/akun");
   return { ok: true };
 }
+
+// Ubah nama & role akun sekaligus
+export async function updateAccount(
+  id: string,
+  input: { fullName: string; role: string }
+): Promise<{ ok: boolean; error?: string }> {
+  const gate = await requireSuperAdmin();
+  if (!gate.ok) return gate;
+  const fullName = input.fullName?.trim();
+  if (!fullName) return { ok: false, error: "Nama tidak boleh kosong." };
+  const role = (ROLES.includes(input.role as Role) ? input.role : "operation") as Role;
+
+  // role akun sendiri tidak boleh diubah (hindari mengunci diri)
+  const profilePatch: Record<string, string> = { full_name: fullName };
+  if (id !== gate.meId) profilePatch.role = role;
+
+  const { error } = await gate.admin.from("profiles").update(profilePatch).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  // selaraskan nama di metadata auth
+  try {
+    await gate.admin.auth.admin.updateUserById(id, { user_metadata: { full_name: fullName } });
+  } catch {
+    /* abaikan */
+  }
+  revalidatePath("/akun");
+  return { ok: true };
+}
+
+// Setel ulang password (password lama TIDAK bisa dilihat — tersimpan sebagai hash)
+export async function resetPassword(id: string, password: string): Promise<{ ok: boolean; error?: string }> {
+  const gate = await requireSuperAdmin();
+  if (!gate.ok) return gate;
+  if (!password || password.length < 8) return { ok: false, error: "Password minimal 8 karakter." };
+  const { error } = await gate.admin.auth.admin.updateUserById(id, { password });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
