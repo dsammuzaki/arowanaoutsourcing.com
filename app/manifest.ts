@@ -13,9 +13,9 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#0b1f2e",
     theme_color: "#0b1f2e",
     icons: [
-      { src: "/abp-logo.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/abp-logo.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/abp-logo-t.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/bsu-logo.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/bsu-logo.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/bsu-logo.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

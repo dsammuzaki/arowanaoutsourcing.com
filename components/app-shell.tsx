@@ -146,7 +146,7 @@ function SidebarInner({
   return (
     <div className="safe-top flex h-full flex-col bg-sidebar">
       <div className="flex items-center gap-3 px-5 py-5">
-        <Logo size={38} />
+        <Logo size={34} chip />
         <div className="leading-tight">
           <p className="text-[13px] font-bold leading-tight text-white">
             Barata Sakti Utama

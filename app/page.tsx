@@ -14,7 +14,7 @@ export default function LoginPage() {
           }}
         />
         <div className="relative flex items-center gap-3">
-          <Logo size={44} />
+          <Logo size={40} chip />
           <div className="leading-tight">
             <p className="text-lg font-bold">Barata Sakti Utama</p>
             <p className="text-xs text-teal-soft">Sistem Manajemen Outsourcing</p>

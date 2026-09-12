@@ -14,12 +14,9 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   icons: {
-    icon: [
-      { url: "/abp-logo.png", type: "image/png" },
-      { url: "/abp-logo-t.png", type: "image/png" },
-    ],
-    shortcut: "/abp-logo.png",
-    apple: "/abp-logo.png",
+    icon: [{ url: "/bsu-logo.png", type: "image/png" }],
+    shortcut: "/bsu-logo.png",
+    apple: "/bsu-logo.png",
   },
 };
 
