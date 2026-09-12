@@ -18,6 +18,14 @@ const roleLabel: Record<string, string> = {
   operation: "Operation",
   director: "Director",
   finance: "Finance",
+  hr_pic: "HR / PIC",
+  customer: "Customer",
+};
+
+// Role terbatas: hanya boleh melihat halaman tertentu
+const ROLE_PAGES: Record<string, string[]> = {
+  hr_pic: ["/dashboard", "/karyawan", "/absensi"],
+  customer: ["/dashboard", "/absensi", "/karyawan", "/bpjs", "/payroll"],
 };
 import {
   LayoutDashboard,
@@ -35,6 +43,8 @@ import {
   Info,
   SquareKanban,
   ShieldCheck,
+  HeartPulse,
+  ClipboardCheck,
   LogOut,
   Menu,
   X,
@@ -70,6 +80,7 @@ const nav: NavSection[] = [
     items: [
       { href: "/payroll", label: "Payroll & Slip Gaji", Icon: Wallet },
       { href: "/pencairan", label: "Pencairan Gaji", Icon: Banknote },
+      { href: "/bpjs", label: "BPJS", Icon: HeartPulse },
       { href: "/invoice", label: "Invoice Klien", Icon: FileText },
       { href: "/fee", label: "Fee / Komisi", Icon: Handshake },
     ],
@@ -78,6 +89,7 @@ const nav: NavSection[] = [
     group: "Sistem",
     items: [
       { href: "/akun", label: "Manajemen Akun", Icon: ShieldCheck, roles: ["super_admin"] },
+      { href: "/persetujuan", label: "Persetujuan", Icon: ClipboardCheck, roles: ["super_admin", "operation", "director"] },
       { href: "/about", label: "Tentang BSU", Icon: Info },
       { href: "/pengaturan", label: "Pengaturan", Icon: Settings },
     ],
@@ -96,7 +108,12 @@ function NavLinks({
   return (
     <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
       {nav.map((section) => {
-        const items = section.items.filter((it) => !it.roles || (role && it.roles.includes(role)));
+        const allowed = role ? ROLE_PAGES[role] : undefined;
+        const items = section.items.filter((it) => {
+          if (it.roles) return role ? it.roles.includes(role) : false; // gate eksplisit (akun, persetujuan)
+          if (allowed) return allowed.includes(it.href); // role terbatas: hanya allowlist
+          return true; // role penuh: semua
+        });
         if (items.length === 0) return null;
         return (
         <div key={section.group}>

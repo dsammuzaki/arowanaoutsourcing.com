@@ -33,6 +33,7 @@ import {
 import { rupiah, tanggal, initials } from "@/lib/format";
 import { PrintButton } from "@/components/print-button";
 import { Logo } from "@/components/logo";
+import { AjukanPerubahanButton } from "@/components/ajukan-perubahan";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 
 // Ambil karyawan + kontrak: coba database dulu, lalu fallback data contoh.
@@ -101,6 +102,25 @@ export default async function KaryawanDetailPage({
   const found = await getEmployee(id);
   if (!found) notFound();
   const { emp, contract } = found;
+
+  // Role pengguna → tentukan siapa yang boleh mengajukan perubahan
+  let role = "";
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const {
+        data: { user },
+      } = await sb.auth.getUser();
+      if (user) {
+        const { data: p } = await sb.from("profiles").select("role").eq("id", user.id).single();
+        role = p?.role ?? "";
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  const canRequest = role === "hr_pic" || role === "customer";
+
   const client = clientById(emp.clientId);
   const entity = legalEntities.find((e) => e.id === client?.entityId);
   const att = attendanceSummaryFor(id);
@@ -132,9 +152,26 @@ export default async function KaryawanDetailPage({
         <Link href="/kontrak" className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
           <ArrowLeft size={16} /> Kembali ke Monitoring Kontrak
         </Link>
-        <PrintButton className="btn-outline" targetId="doc-profil">
-          <Printer size={16} /> Cetak Profil
-        </PrintButton>
+        <div className="flex gap-2">
+          {canRequest && (
+            <AjukanPerubahanButton
+              emp={{
+                id: emp.id,
+                name: emp.name,
+                position: emp.position,
+                branch: emp.branch,
+                bankName: emp.bankName,
+                bankAccount: emp.bankAccount,
+                npwp: emp.npwp,
+                maritalStatus: emp.maritalStatus,
+                dependents: emp.dependents,
+              }}
+            />
+          )}
+          <PrintButton className="btn-outline" targetId="doc-profil">
+            <Printer size={16} /> Cetak Profil
+          </PrintButton>
+        </div>
       </div>
 
       <div id="doc-profil" className="print-full">

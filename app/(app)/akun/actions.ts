@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
 
-const ROLES = ["super_admin", "operation", "director", "finance"] as const;
+const ROLES = ["super_admin", "operation", "director", "finance", "hr_pic", "customer"] as const;
 type Role = (typeof ROLES)[number];
 
 async function requireSuperAdmin() {

@@ -11,13 +11,17 @@ const roleOptions = [
   { value: "operation", label: "Operation" },
   { value: "director", label: "Director" },
   { value: "finance", label: "Finance" },
+  { value: "hr_pic", label: "HR / PIC" },
+  { value: "customer", label: "Customer" },
 ];
 
-const roleTone: Record<string, "teal" | "green" | "amber" | "slate"> = {
+const roleTone: Record<string, "teal" | "green" | "amber" | "slate" | "navy" | "gold"> = {
   super_admin: "amber",
   operation: "teal",
   director: "green",
   finance: "slate",
+  hr_pic: "navy",
+  customer: "gold",
 };
 
 export type AccountRow = {
