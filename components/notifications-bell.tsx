@@ -4,53 +4,30 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, FileClock, CalendarDays, FileText, CheckCheck } from "lucide-react";
 
-type Notif = {
+export type NotifItem = {
   id: string;
   title: string;
   desc: string;
   href: string;
-  Icon: typeof Bell;
+  kind: "kontrak" | "cuti" | "invoice" | "approval";
   tone: "teal" | "amber" | "red";
   time: string;
 };
 
-const DEFAULT_NOTIFS: Notif[] = [
-  {
-    id: "n1",
-    title: "Kontrak segera berakhir",
-    desc: "Beberapa tenaga kerja perlu perpanjangan kontrak bulan ini.",
-    href: "/kontrak",
-    Icon: FileClock,
-    tone: "amber",
-    time: "Hari ini",
-  },
-  {
-    id: "n2",
-    title: "Pengajuan cuti menunggu",
-    desc: "Ada pengajuan cuti/izin yang menunggu persetujuan.",
-    href: "/cuti",
-    Icon: CalendarDays,
-    tone: "teal",
-    time: "1 hari lalu",
-  },
-  {
-    id: "n3",
-    title: "Invoice jatuh tempo",
-    desc: "Invoice klien mendekati tanggal jatuh tempo pembayaran.",
-    href: "/invoice",
-    Icon: FileText,
-    tone: "red",
-    time: "2 hari lalu",
-  },
-];
+const iconByKind: Record<NotifItem["kind"], typeof Bell> = {
+  kontrak: FileClock,
+  cuti: CalendarDays,
+  invoice: FileText,
+  approval: CheckCheck,
+};
 
-const toneClass: Record<Notif["tone"], string> = {
+const toneClass: Record<NotifItem["tone"], string> = {
   teal: "bg-primary/10 text-primary",
   amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
   red: "bg-red-50 text-brand-red dark:bg-red-950/40",
 };
 
-export function NotificationsBell() {
+export function NotificationsBell({ items = [] }: { items?: NotifItem[] }) {
   const [open, setOpen] = useState(false);
   const [read, setRead] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -69,7 +46,7 @@ export function NotificationsBell() {
     };
   }, [open]);
 
-  const unread = read ? 0 : DEFAULT_NOTIFS.length;
+  const unread = read ? 0 : items.length;
 
   return (
     <div className="relative" ref={ref}>
@@ -99,23 +76,29 @@ export function NotificationsBell() {
             </span>
           </div>
           <div className="max-h-[60vh] divide-y divide-border overflow-y-auto">
-            {DEFAULT_NOTIFS.map((n) => (
-              <Link
-                key={n.id}
-                href={n.href}
-                onClick={() => setOpen(false)}
-                className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted"
-              >
-                <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneClass[n.tone]}`}>
-                  <n.Icon size={17} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground">{n.title}</p>
-                  <p className="text-xs text-muted-foreground">{n.desc}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground/70">{n.time}</p>
-                </div>
-              </Link>
-            ))}
+            {items.length === 0 && (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">Tidak ada notifikasi baru 🎉</p>
+            )}
+            {items.map((n) => {
+              const Icon = iconByKind[n.kind];
+              return (
+                <Link
+                  key={n.id}
+                  href={n.href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted"
+                >
+                  <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneClass[n.tone]}`}>
+                    <Icon size={17} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{n.title}</p>
+                    <p className="text-xs text-muted-foreground">{n.desc}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground/70">{n.time}</p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
           <div className="border-t border-border px-4 py-2.5 text-center">
             <Link

@@ -4,7 +4,41 @@ import { AppShell, type ShellUser } from "@/components/app-shell";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
 import type { SearchItem } from "@/components/global-search";
-import { employees as mockEmployees, clients as mockClients, invoices as mockInvoices } from "@/lib/data";
+import type { NotifItem } from "@/components/notifications-bell";
+import { employees as mockEmployees, clients as mockClients, invoices as mockInvoices, deriveContract } from "@/lib/data";
+import { getEmployees } from "@/lib/server-data";
+
+async function buildNotifs(role: string): Promise<NotifItem[]> {
+  const out: NotifItem[] = [];
+  const isManager = ["super_admin", "operation", "director"].includes(role);
+  try {
+    const emps = await getEmployees(); // ter-scope RLS
+    const expiring = emps
+      .filter((e) => e.status === "aktif")
+      .map((e) => deriveContract(e))
+      .filter((c) => c.status === "segera_berakhir" || c.status === "berakhir").length;
+    if (expiring > 0)
+      out.push({ id: "kontrak", title: "Kontrak segera berakhir", desc: `${expiring} kontrak perlu tindakan`, href: "/kontrak", kind: "kontrak", tone: "amber", time: "Perlu ditinjau" });
+  } catch {
+    /* abaikan */
+  }
+  if (isManager) {
+    try {
+      const sb = createClient(await cookies());
+      const [{ count: pApprove }, { count: pLeave }] = await Promise.all([
+        sb.from("change_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        sb.from("leave_applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      ]);
+      if (pApprove)
+        out.push({ id: "approval", title: "Persetujuan menunggu", desc: `${pApprove} permintaan perubahan`, href: "/persetujuan", kind: "approval", tone: "teal", time: "Menunggu" });
+      if (pLeave)
+        out.push({ id: "cuti", title: "Cuti menunggu persetujuan", desc: `${pLeave} pengajuan`, href: "/cuti", kind: "cuti", tone: "teal", time: "Menunggu" });
+    } catch {
+      /* tabel mungkin belum ada */
+    }
+  }
+  return out;
+}
 
 const PAGES: SearchItem[] = [
   { label: "Dashboard", href: "/dashboard", kind: "halaman" },
@@ -101,9 +135,10 @@ export default async function AppGroupLayout({
   }
 
   const searchIndex = await buildSearchIndex();
+  const notifs = user ? await buildNotifs(user.role) : [];
 
   return (
-    <AppShell user={user} searchIndex={searchIndex}>
+    <AppShell user={user} searchIndex={searchIndex} notifs={notifs}>
       {children}
     </AppShell>
   );

@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import { Logo } from "./logo";
 import { createClient } from "@/utils/supabase/client";
 import { OnboardingQuest } from "./onboarding-quest";
-import { NotificationsBell } from "./notifications-bell";
+import { NotificationsBell, type NotifItem } from "./notifications-bell";
 import { GlobalSearch, type SearchItem } from "./global-search";
 import { UserMenu } from "./user-menu";
 
@@ -226,10 +226,12 @@ export function AppShell({
   children,
   user,
   searchIndex = [],
+  notifs = [],
 }: {
   children: React.ReactNode;
   user?: ShellUser;
   searchIndex?: SearchItem[];
+  notifs?: NotifItem[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -278,7 +280,7 @@ export function AppShell({
           <GlobalSearch index={searchIndex} className="hidden max-w-md flex-1 sm:block" />
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle />
-            <NotificationsBell />
+            <NotificationsBell items={notifs} />
             <UserMenu name={displayName} email={user?.email ?? ""} role={user?.role ?? ""} onLogout={handleLogout} />
           </div>
         </header>
