@@ -20,9 +20,10 @@ async function load() {
   if (!hasAdmin()) return { state: "no-admin" as const, meId: user.id };
 
   const admin = createAdminClient();
-  const [{ data: profiles }, listRes] = await Promise.all([
-    admin.from("profiles").select("id, full_name, role, created_at").order("created_at"),
+  const [{ data: profiles }, listRes, { data: clientRows }] = await Promise.all([
+    admin.from("profiles").select("id, full_name, role, created_at, client_id").order("created_at"),
     admin.auth.admin.listUsers({ perPage: 200 }),
+    admin.from("clients").select("id, name").order("name"),
   ]);
   const emailById = new Map((listRes.data?.users ?? []).map((u) => [u.id, u.email ?? ""]));
   const rows: AccountRow[] = (profiles ?? []).map((p) => ({
@@ -30,9 +31,11 @@ async function load() {
     email: emailById.get(p.id) ?? "—",
     fullName: p.full_name || "(tanpa nama)",
     role: p.role,
+    clientId: (p as { client_id?: string }).client_id ?? "",
     createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—",
   }));
-  return { state: "ok" as const, rows, meId: user.id };
+  const clients = (clientRows ?? []).map((c) => ({ id: c.id, name: c.name }));
+  return { state: "ok" as const, rows, meId: user.id, clients };
 }
 
 export default async function AkunPage() {
@@ -108,7 +111,7 @@ export default async function AkunPage() {
             Ubah role langsung dari dropdown. Akun sendiri tidak bisa diubah/dihapus untuk keamanan.
           </p>
         </div>
-        <AccountsTable rows={rows} meId={res.meId} />
+        <AccountsTable rows={rows} meId={res.meId} clients={res.clients} />
       </Card>
     </>
   );

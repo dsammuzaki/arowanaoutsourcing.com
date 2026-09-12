@@ -121,7 +121,8 @@ export async function getMonthlyRecap(year: number, month: number): Promise<Reca
   const endIso = `${end.y}-${String(end.m).padStart(2, "0")}-01T00:00:00+07:00`;
 
   const [{ data: emps }, { data: att }, { data: leaves }] = await Promise.all([
-    sb.from("employees").select("id,name,position").eq("status", "aktif").order("name").limit(80),
+    // pakai sesi user (RLS) agar Customer hanya melihat karyawan kliennya
+    supabase.from("employees").select("id,name,position").eq("status", "aktif").order("name").limit(200),
     sb.from("attendance").select("employee_id,created_at,kind").eq("kind", "masuk").gte("created_at", startIso).lt("created_at", endIso),
     sb.from("leave_applications").select("employee_id,type,start_date,end_date,status").lte("start_date", lastDay).gte("end_date", firstDay),
   ]);

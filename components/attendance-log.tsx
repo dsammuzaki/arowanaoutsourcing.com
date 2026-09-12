@@ -8,6 +8,7 @@ import { deleteAttendance } from "@/app/(app)/absensi/actions";
 
 export type LogRow = {
   id: string;
+  employee_id?: string | null;
   employee_name: string | null;
   kind: string;
   created_at: string;

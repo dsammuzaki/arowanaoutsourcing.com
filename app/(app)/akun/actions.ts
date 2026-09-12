@@ -81,10 +81,10 @@ export async function deleteAccount(id: string): Promise<{ ok: boolean; error?: 
   return { ok: true };
 }
 
-// Ubah nama & role akun sekaligus
+// Ubah nama, role, dan klien (khusus Customer) sekaligus
 export async function updateAccount(
   id: string,
-  input: { fullName: string; role: string }
+  input: { fullName: string; role: string; clientId?: string }
 ): Promise<{ ok: boolean; error?: string }> {
   const gate = await requireSuperAdmin();
   if (!gate.ok) return gate;
@@ -93,8 +93,10 @@ export async function updateAccount(
   const role = (ROLES.includes(input.role as Role) ? input.role : "operation") as Role;
 
   // role akun sendiri tidak boleh diubah (hindari mengunci diri)
-  const profilePatch: Record<string, string> = { full_name: fullName };
+  const profilePatch: Record<string, string | null> = { full_name: fullName };
   if (id !== gate.meId) profilePatch.role = role;
+  // client_id hanya untuk Customer, selain itu dikosongkan
+  profilePatch.client_id = role === "customer" ? (input.clientId || null) : null;
 
   const { error } = await gate.admin.from("profiles").update(profilePatch).eq("id", id);
   if (error) return { ok: false, error: error.message };

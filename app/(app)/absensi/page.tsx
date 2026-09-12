@@ -29,10 +29,17 @@ async function getData() {
         sb.from("attendance_sites").select("id,name,lat,lng,radius_m"),
         user ? sb.from("profiles").select("role").eq("id", user.id).single() : Promise.resolve({ data: null }),
       ]);
-      if (emps && emps.length) empOptions = emps.map((e) => ({ id: e.id, name: e.name }));
-      if (rows) log = rows as LogRow[];
+      const role = (prof.data as { role?: string } | null)?.role ?? "";
+      if (emps) empOptions = emps.map((e) => ({ id: e.id, name: e.name }));
+      let logRows = (rows as LogRow[]) ?? [];
+      // Customer hanya melihat absensi karyawan kliennya
+      if (role === "customer") {
+        const allowed = new Set((emps ?? []).map((e) => e.id));
+        logRows = logRows.filter((r) => !!r.employee_id && allowed.has(r.employee_id));
+      }
+      log = logRows;
       if (siteRows) sites = siteRows as SiteRow[];
-      canDelete = MANAGE_ROLES.includes((prof.data as { role?: string } | null)?.role ?? "");
+      canDelete = MANAGE_ROLES.includes(role);
     } catch {
       /* fallback */
     }

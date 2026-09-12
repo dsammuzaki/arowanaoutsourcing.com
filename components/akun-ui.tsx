@@ -39,8 +39,10 @@ export type AccountRow = {
   email: string;
   fullName: string;
   role: string;
+  clientId?: string;
   createdAt: string;
 };
+export type ClientOpt = { id: string; name: string };
 
 export function TambahAkunButton() {
   const router = useRouter();
@@ -144,7 +146,7 @@ export function TambahAkunButton() {
   );
 }
 
-export function AccountsTable({ rows, meId }: { rows: AccountRow[]; meId: string }) {
+export function AccountsTable({ rows, meId, clients = [] }: { rows: AccountRow[]; meId: string; clients?: ClientOpt[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState("");
   const [editRow, setEditRow] = useState<AccountRow | null>(null);
@@ -250,7 +252,7 @@ export function AccountsTable({ rows, meId }: { rows: AccountRow[]; meId: string
         </tbody>
       </table>
 
-      {editRow && <EditAccountModal row={editRow} isMe={editRow.id === meId} onClose={() => setEditRow(null)} onDone={() => { setEditRow(null); router.refresh(); }} />}
+      {editRow && <EditAccountModal row={editRow} isMe={editRow.id === meId} clients={clients} onClose={() => setEditRow(null)} onDone={() => { setEditRow(null); router.refresh(); }} />}
       {pwRow && <ResetPasswordModal row={pwRow} onClose={() => setPwRow(null)} />}
     </div>
   );
@@ -259,23 +261,30 @@ export function AccountsTable({ rows, meId }: { rows: AccountRow[]; meId: string
 function EditAccountModal({
   row,
   isMe,
+  clients,
   onClose,
   onDone,
 }: {
   row: AccountRow;
   isMe: boolean;
+  clients: ClientOpt[];
   onClose: () => void;
   onDone: () => void;
 }) {
   const [fullName, setFullName] = useState(row.fullName);
   const [role, setRole] = useState(row.role);
+  const [clientId, setClientId] = useState(row.clientId ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
   async function save() {
+    if (role === "customer" && !clientId) {
+      setErr("Pilih klien untuk akun Customer.");
+      return;
+    }
     setBusy(true);
     setErr("");
-    const res = await updateAccount(row.id, { fullName, role });
+    const res = await updateAccount(row.id, { fullName, role, clientId });
     setBusy(false);
     if (res.ok) onDone();
     else setErr(res.error || "Gagal menyimpan.");
@@ -308,6 +317,20 @@ function EditAccountModal({
           </select>
           {isMe && <p className="mt-1 text-xs text-muted-foreground">Role akun sendiri tidak bisa diubah.</p>}
         </div>
+        {role === "customer" && (
+          <div>
+            <label className="label">Klien (akun ini hanya melihat data klien ini)</label>
+            <select className="input" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <option value="">— pilih klien —</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Tanpa klien, akun Customer tidak melihat data apa pun (aman).
+            </p>
+          </div>
+        )}
         <p className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
           Email tidak diubah di sini. Untuk ganti password, gunakan tombol Reset Password.
         </p>
