@@ -6,21 +6,12 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Logo } from "./logo";
 import { createClient } from "@/utils/supabase/client";
-import { initials } from "@/lib/format";
 import { OnboardingQuest } from "./onboarding-quest";
 import { NotificationsBell } from "./notifications-bell";
 import { GlobalSearch, type SearchItem } from "./global-search";
+import { UserMenu } from "./user-menu";
 
 export type ShellUser = { email: string; name: string; role: string } | null;
-
-const roleLabel: Record<string, string> = {
-  super_admin: "Super Admin",
-  operation: "Operation",
-  director: "Director",
-  finance: "Finance",
-  hr_pic: "HR / PIC",
-  customer: "Customer",
-};
 
 // Role terbatas: hanya boleh melihat halaman tertentu
 const ROLE_PAGES: Record<string, string[]> = {
@@ -220,7 +211,6 @@ export function AppShell({
   }
 
   const displayName = user?.name || "Pengguna";
-  const displayRole = user ? roleLabel[user.role] ?? user.role : "Demo";
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -257,15 +247,7 @@ export function AppShell({
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle />
             <NotificationsBell />
-            <div className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 hover:bg-muted">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
-                {initials(displayName)}
-              </div>
-              <div className="hidden text-left leading-tight sm:block">
-                <p className="text-sm font-semibold text-foreground">{displayName}</p>
-                <p className="text-[11px] text-muted-foreground">{displayRole}</p>
-              </div>
-            </div>
+            <UserMenu name={displayName} email={user?.email ?? ""} role={user?.role ?? ""} onLogout={handleLogout} />
           </div>
         </header>
 
