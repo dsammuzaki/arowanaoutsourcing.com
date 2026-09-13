@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
 import { logAudit } from "@/lib/audit";
+import { sendEmail, emailHtml, getEmailsByRoles, getUserEmail } from "@/lib/email";
 
 const REVIEW_ROLES = ["super_admin", "operation", "director"];
 // field yang boleh diubah lewat permintaan (kind 'karyawan')
@@ -52,6 +53,16 @@ export async function requestChange(input: ChangeInput): Promise<{ ok: boolean; 
       return { ok: false, error: "Tabel persetujuan belum dibuat. Jalankan supabase/schema-4.sql." };
     return { ok: false, error: error.message };
   }
+  await sendEmail(
+    await getEmailsByRoles(["super_admin", "operation", "director"]),
+    "Permintaan perubahan baru",
+    emailHtml({
+      title: "Permintaan perubahan menunggu",
+      intro: `${name} (${role}) mengajukan perubahan pada "${input.targetLabel}".`,
+      ctaPath: "/persetujuan",
+      ctaLabel: "Tinjau Persetujuan",
+    })
+  );
   revalidatePath("/persetujuan");
   return { ok: true };
 }
@@ -91,6 +102,17 @@ export async function reviewChange(
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
   await logAudit(`Persetujuan: ${action}`, cr.target_label ?? cr.target_id ?? "", cr.kind);
+  const reqEmail = await getUserEmail(cr.requested_by as string | null);
+  if (reqEmail)
+    await sendEmail(
+      reqEmail,
+      `Permintaan perubahan ${action}`,
+      emailHtml({
+        title: `Permintaan Anda ${action}`,
+        intro: `Permintaan perubahan pada "${cr.target_label ?? cr.target_id}" telah ${action} oleh manajemen.`,
+        ctaPath: "/karyawan",
+      })
+    );
   revalidatePath("/persetujuan");
   revalidatePath("/karyawan");
   return { ok: true };

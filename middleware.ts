@@ -3,8 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 
 // Role terbatas hanya boleh mengakses halaman ini (termasuk sub-rute detail).
 const ROLE_PAGES: Record<string, string[]> = {
-  hr_pic: ["/dashboard", "/karyawan", "/kontrak", "/absensi"],
-  customer: ["/dashboard", "/absensi", "/karyawan", "/kontrak", "/bpjs", "/payroll"],
+  hr_pic: ["/dashboard", "/karyawan", "/kontrak", "/absensi", "/chat"],
+  customer: ["/dashboard", "/absensi", "/karyawan", "/kontrak", "/bpjs", "/payroll", "/chat"],
 };
 
 export async function middleware(req: NextRequest) {

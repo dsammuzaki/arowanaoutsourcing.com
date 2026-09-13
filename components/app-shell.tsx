@@ -16,8 +16,8 @@ export type ShellUser = { email: string; name: string; role: string } | null;
 
 // Role terbatas: hanya boleh melihat halaman tertentu
 const ROLE_PAGES: Record<string, string[]> = {
-  hr_pic: ["/dashboard", "/karyawan", "/absensi"],
-  customer: ["/dashboard", "/absensi", "/karyawan", "/bpjs", "/payroll"],
+  hr_pic: ["/dashboard", "/karyawan", "/absensi", "/chat"],
+  customer: ["/dashboard", "/absensi", "/karyawan", "/bpjs", "/payroll", "/chat"],
 };
 import {
   LayoutDashboard,
@@ -37,6 +37,7 @@ import {
   HeartPulse,
   ClipboardCheck,
   History,
+  MessageCircle,
   LogOut,
   Menu,
   X,
@@ -49,7 +50,13 @@ type NavItem = { href: string; label: string; Icon: LucideIcon; roles?: string[]
 type NavSection = { group: string; items: NavItem[] };
 
 const nav: NavSection[] = [
-  { group: "Utama", items: [{ href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard }] },
+  {
+    group: "Utama",
+    items: [
+      { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+      { href: "/chat", label: "Chat Tim", Icon: MessageCircle },
+    ],
+  },
   {
     group: "Operasional",
     items: [

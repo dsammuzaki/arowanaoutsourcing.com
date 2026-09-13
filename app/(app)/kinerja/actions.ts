@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { sendEmail, emailHtml, getEmailsByRoles } from "@/lib/email";
 
 async function writer() {
   const sb = createClient(await cookies());
@@ -34,6 +35,16 @@ export async function createGoal(input: {
       return { ok: false, error: "Tabel goals belum dibuat. Jalankan schema-6.sql." };
     return { ok: false, error: error.message };
   }
+  await sendEmail(
+    await getEmailsByRoles(["super_admin", "operation", "director"]),
+    "Goal KPI baru dibuat",
+    emailHtml({
+      title: "Goal baru dibuat",
+      intro: `Goal "${input.title}" untuk ${input.employeeName || "-"} telah ditambahkan.`,
+      ctaPath: "/kinerja",
+      ctaLabel: "Lihat Kinerja & KPI",
+    })
+  );
   revalidatePath("/kinerja");
   return { ok: true };
 }

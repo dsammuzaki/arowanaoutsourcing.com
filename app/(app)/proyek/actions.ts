@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { sendEmail, emailHtml, getEmailsByRoles } from "@/lib/email";
 
 const APPROVER_ROLES = ["super_admin", "director", "operation"];
 
@@ -51,6 +52,16 @@ export async function createTask(input: NewTask): Promise<{ ok: boolean; error?:
     approver: input.approver ?? null,
   });
   if (error) return { ok: false, error: error.message };
+  await sendEmail(
+    await getEmailsByRoles(["super_admin", "operation", "director"]),
+    "Tugas proyek baru",
+    emailHtml({
+      title: "Task baru ditambahkan",
+      intro: `Tugas "${input.title.trim()}" (PJ: ${input.assignee || "-"}) telah dibuat di Manajemen Proyek.`,
+      ctaPath: "/proyek",
+      ctaLabel: "Buka Manajemen Proyek",
+    })
+  );
   revalidatePath("/proyek");
   return { ok: true };
 }

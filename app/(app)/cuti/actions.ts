@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { sendEmail, emailHtml, getEmailsByRoles } from "@/lib/email";
 
 const APPROVER_ROLES = ["super_admin", "director", "operation"];
 
@@ -46,6 +47,16 @@ export async function createLeave(formData: FormData): Promise<{ ok: boolean; er
   const writer = hasAdmin() ? createAdminClient() : supabase;
   const { error } = await writer.from("leave_applications").insert(row);
   if (error) return { ok: false, error: error.message };
+  await sendEmail(
+    await getEmailsByRoles(["super_admin", "operation", "director"]),
+    "Pengajuan cuti baru",
+    emailHtml({
+      title: "Pengajuan cuti/izin baru",
+      intro: `Ada pengajuan ${type} (${start_date} s/d ${end_date}) yang menunggu persetujuan.`,
+      ctaPath: "/cuti",
+      ctaLabel: "Tinjau Cuti",
+    })
+  );
   revalidatePath("/cuti");
   return { ok: true };
 }
