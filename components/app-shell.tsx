@@ -10,6 +10,7 @@ import { OnboardingQuest } from "./onboarding-quest";
 import { NotificationsBell, type NotifItem } from "./notifications-bell";
 import { GlobalSearch, type SearchItem } from "./global-search";
 import { UserMenu } from "./user-menu";
+import { PageTransition } from "./page-transition";
 
 export type ShellUser = { email: string; name: string; role: string } | null;
 
@@ -288,7 +289,7 @@ export function AppShell({
         </header>
 
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
         <footer className="safe-bottom border-t border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
