@@ -50,13 +50,14 @@ export function UserMenu({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-muted ${
+        className={`flex h-11 items-center gap-2.5 rounded-xl px-1.5 transition-colors hover:bg-muted active:bg-muted sm:pr-2 ${
           open ? "bg-muted" : ""
         }`}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={`Menu akun — ${name}`}
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
           {initials(name)}
         </div>
         <div className="hidden text-left leading-tight sm:block">

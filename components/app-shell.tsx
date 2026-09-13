@@ -216,6 +216,62 @@ function SidebarInner({
   );
 }
 
+// ---- Dock navigasi bawah (mobile) — pola aplikasi native ----
+const DOCK_ORDER = ["/dashboard", "/chat", "/proyek", "/karyawan", "/absensi", "/payroll"];
+
+function MobileDock({ role, onOpenMenu }: { role?: string; onOpenMenu: () => void }) {
+  const pathname = usePathname();
+  const byHref = new Map<string, NavItem>();
+  nav.forEach((s) => s.items.forEach((it) => byHref.set(it.href, it)));
+
+  const allowed = role ? ROLE_PAGES[role] : undefined;
+  const items = DOCK_ORDER.map((href) => byHref.get(href))
+    .filter((it): it is NavItem => {
+      if (!it) return false;
+      if (it.roles) return role ? it.roles.includes(role) : false;
+      if (allowed) return allowed.includes(it.href);
+      return true;
+    })
+    .slice(0, 4);
+
+  return (
+    <nav
+      className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/85 backdrop-blur-xl lg:hidden"
+      aria-label="Navigasi cepat"
+    >
+      <div className="flex items-stretch justify-around px-1 pt-1">
+        {items.map(({ href, label, Icon }) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-2 text-[10px] font-medium transition-colors ${
+                active ? "text-primary" : "text-muted-foreground active:bg-muted"
+              }`}
+            >
+              {active && (
+                <span className="absolute -top-1 h-0.5 w-8 rounded-full bg-primary" />
+              )}
+              <Icon size={21} strokeWidth={active ? 2.4 : 1.9} />
+              <span className="w-full truncate text-center">{label}</span>
+            </Link>
+          );
+        })}
+        <button
+          onClick={onOpenMenu}
+          aria-label="Buka semua menu"
+          className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-2 text-[10px] font-medium text-muted-foreground transition-colors active:bg-muted"
+        >
+          <Menu size={21} strokeWidth={1.9} />
+          <span className="w-full truncate text-center">Menu</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -224,7 +280,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(dark ? "light" : "dark")}
-      className="rounded-lg p-2 text-muted-foreground hover:bg-muted"
+      className="flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted active:bg-muted"
       aria-label="Ganti tema"
     >
       {mounted ? dark ? <Sun size={20} /> : <Moon size={20} /> : <span className="block h-5 w-5" />}
@@ -275,30 +331,30 @@ export function AppShell({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col pb-[calc(4.25rem+var(--safe-bottom))] lg:pb-0">
         {/* Topbar */}
-        <header
-          className="safe-top sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/90 px-4 backdrop-blur sm:px-6"
-        >
-          <button
-            className="rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
-            onClick={() => setOpen(true)}
-            aria-label="Buka menu"
-          >
-            <Menu size={20} />
-          </button>
-          <GlobalSearch index={searchIndex} className="hidden max-w-md flex-1 sm:block" />
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <ThemeToggle />
-            <NotificationsBell items={notifs} />
-            <UserMenu name={displayName} email={user?.email ?? ""} role={user?.role ?? ""} onLogout={handleLogout} />
+        <header className="safe-top sticky top-0 z-30 border-b border-border bg-card/85 backdrop-blur-xl">
+          <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6">
+            <button
+              className="-ml-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted active:bg-muted lg:hidden"
+              onClick={() => setOpen(true)}
+              aria-label="Buka menu"
+            >
+              <Menu size={20} />
+            </button>
+            <GlobalSearch index={searchIndex} className="hidden max-w-md flex-1 sm:block" />
+            <div className="ml-auto flex items-center gap-0.5 sm:gap-2">
+              <ThemeToggle />
+              <NotificationsBell items={notifs} />
+              <UserMenu name={displayName} email={user?.email ?? ""} role={user?.role ?? ""} onLogout={handleLogout} />
+            </div>
           </div>
         </header>
 
         <main className="mx-auto w-full max-w-7xl flex-1 overflow-x-clip px-4 py-6 sm:px-6 lg:px-8">
           <PageTransition>{children}</PageTransition>
         </main>
-        <footer className="safe-bottom border-t border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8">
+        <footer className="border-t border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8 lg:pb-[calc(1rem+var(--safe-bottom))]">
           <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
             <div className="flex items-center gap-2">
               <Logo size={22} />
@@ -310,6 +366,8 @@ export function AppShell({
           </div>
         </footer>
       </div>
+
+      <MobileDock role={user?.role} onOpenMenu={() => setOpen(true)} />
 
       <OnboardingQuest />
     </div>

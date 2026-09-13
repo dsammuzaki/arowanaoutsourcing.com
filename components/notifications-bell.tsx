@@ -55,7 +55,7 @@ export function NotificationsBell({ items = [] }: { items?: NotifItem[] }) {
           setOpen((o) => !o);
           setRead(true);
         }}
-        className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted"
+        className="relative flex h-11 w-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted active:bg-muted"
         aria-label="Notifikasi"
         aria-expanded={open}
       >
