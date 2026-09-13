@@ -37,6 +37,7 @@ import {
   calcPayroll,
 } from "@/lib/data";
 import { getEmployees } from "@/lib/server-data";
+import { getPayrollConfig } from "@/lib/settings";
 import {
   WeeklyBars,
   AttendanceDonut,
@@ -231,9 +232,9 @@ export default async function DashboardPage() {
   const greetName = await getGreetName();
 
   // Angka utama dari data karyawan asli
-  const emps = await getEmployees();
+  const [emps, cfg] = await Promise.all([getEmployees(), getPayrollConfig()]);
   const activeCount = emps.filter((e) => e.status === "aktif").length;
-  const payrollTotal = emps.filter((e) => e.status === "aktif").reduce((s, e) => s + calcPayroll(e).takeHome, 0);
+  const payrollTotal = emps.filter((e) => e.status === "aktif").reduce((s, e) => s + calcPayroll(e, 0, cfg).takeHome, 0);
   const clientCount = new Set(emps.map((e) => e.clientId).filter(Boolean)).size;
   const realTiles = tiles.map((t) =>
     t.label === "Payroll Bulan Ini"

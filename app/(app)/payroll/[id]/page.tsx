@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getPayrollConfig } from "@/lib/settings";
 import { Card, Badge } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { IconPrint, IconDownload } from "@/components/icons";
@@ -15,7 +16,8 @@ export default async function SlipPage({
   const { id } = await params;
   const emp = employeeById(id);
   if (!emp) notFound();
-  const l = calcPayroll(emp);
+  const cfg = await getPayrollConfig();
+  const l = calcPayroll(emp, 0, cfg);
   const client = clients.find((c) => c.id === emp.clientId);
   const entity = legalEntities.find((e) => e.id === client?.entityId);
 

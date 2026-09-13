@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/ui";
 import { calcPayroll, clients, contractTypeLabel } from "@/lib/data";
 import { getEmployees } from "@/lib/server-data";
+import { getPayrollConfig } from "@/lib/settings";
 import { PayrollClient, type PayrollLineDTO } from "@/components/payroll-client";
 
 export const dynamic = "force-dynamic";
@@ -8,11 +9,11 @@ export const dynamic = "force-dynamic";
 const clientOptions = clients.map((c) => ({ id: c.id, name: c.name }));
 
 export default async function PayrollPage() {
-  const employees = await getEmployees();
+  const [employees, cfg] = await Promise.all([getEmployees(), getPayrollConfig()]);
   const lines: PayrollLineDTO[] = employees
     .filter((e) => e.status === "aktif")
     .map((e) => {
-      const p = calcPayroll(e);
+      const p = calcPayroll(e, 0, cfg);
       const client = clients.find((c) => c.id === e.clientId);
       return {
         id: e.id,

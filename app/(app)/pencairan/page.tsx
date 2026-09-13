@@ -3,6 +3,7 @@ import { IconBank, IconWallet, IconCheck, IconPrint } from "@/components/icons";
 import { Logo } from "@/components/logo";
 import { calcPayroll } from "@/lib/data";
 import { getEmployees } from "@/lib/server-data";
+import { getPayrollConfig } from "@/lib/settings";
 import { rupiah } from "@/lib/format";
 import { ExportButton } from "@/components/export-button";
 import { PrintButton } from "@/components/print-button";
@@ -11,8 +12,8 @@ import { ProsesPencairanButton } from "@/components/pencairan-actions";
 export const dynamic = "force-dynamic";
 
 export default async function PencairanPage() {
-  const employees = await getEmployees();
-  const lines = employees.filter((e) => e.status === "aktif").map((e) => calcPayroll(e));
+  const [employees, cfg] = await Promise.all([getEmployees(), getPayrollConfig()]);
+  const lines = employees.filter((e) => e.status === "aktif").map((e) => calcPayroll(e, 0, cfg));
   const transfer = lines.filter((l) => l.method === "transfer");
   const tunai = lines.filter((l) => l.method === "tunai");
 

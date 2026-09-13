@@ -230,11 +230,19 @@ export interface PayrollLine {
   method: "transfer" | "tunai";
 }
 
-function calcPph21(annualPkp: number): number {
+export type BpjsRates = typeof bpjsRates;
+export type Pph21Bracket = { upTo: number; rate: number };
+export type PayrollConfig = {
+  bpjsRates: BpjsRates;
+  ptkpTable: Record<string, number>;
+  pph21Brackets: Pph21Bracket[];
+};
+
+function calcPph21(annualPkp: number, brackets: Pph21Bracket[] = pph21Brackets): number {
   let remaining = Math.max(0, annualPkp);
   let tax = 0;
   let prev = 0;
-  for (const b of pph21Brackets) {
+  for (const b of brackets) {
     const slice = Math.min(remaining, b.upTo - prev);
     if (slice <= 0) break;
     tax += (slice * b.rate) / 100;
@@ -244,7 +252,10 @@ function calcPph21(annualPkp: number): number {
   return Math.round(tax / 12); // per bulan
 }
 
-export function calcPayroll(emp: Employee, periodSeed = 0): PayrollLine {
+export function calcPayroll(emp: Employee, periodSeed = 0, cfg?: PayrollConfig): PayrollLine {
+  const rates = cfg?.bpjsRates ?? bpjsRates;
+  const ptkpT = cfg?.ptkpTable ?? ptkpTable;
+  const brackets = cfg?.pph21Brackets ?? pph21Brackets;
   const r = seeded(Number(emp.id.split("-")[1]) + periodSeed);
   const tunjKehadiran = 300000;
   const tunjJabatan = ["Danru", "Chief Security", "Leader Cleaning", "Adm MTC"].includes(emp.position) ? 500000 : 0;
@@ -259,19 +270,19 @@ export function calcPayroll(emp: Employee, periodSeed = 0): PayrollLine {
   ];
   const gross = earnings.reduce((s, e) => s + e.amount, 0);
 
-  const jht = Math.round((gross * bpjsRates.jhtEmployee) / 100);
-  const jp = Math.round((gross * bpjsRates.jpEmployee) / 100);
-  const kes = Math.round((gross * bpjsRates.kesehatanEmployee) / 100);
+  const jht = Math.round((gross * rates.jhtEmployee) / 100);
+  const jp = Math.round((gross * rates.jpEmployee) / 100);
+  const kes = Math.round((gross * rates.kesehatanEmployee) / 100);
   const bpjsEmployee = jht + jp + kes;
 
-  const biayaJabatan = Math.min(Math.round((gross * bpjsRates.biayaJabatanPct) / 100), 500000);
+  const biayaJabatan = Math.min(Math.round((gross * rates.biayaJabatanPct) / 100), 500000);
   const netMonthly = gross - biayaJabatan - bpjsEmployee;
   const annualNet = netMonthly * 12;
   const ptkpKey = `${emp.maritalStatus}/${Math.min(emp.dependents, 3)}`;
-  const ptkp = ptkpTable[ptkpKey] ?? ptkpTable["TK/0"];
+  const ptkp = ptkpT[ptkpKey] ?? ptkpT["TK/0"];
   const pkp = Math.max(0, Math.floor((annualNet - ptkp) / 12) * 12);
   // Karyawan tanpa NPWP dikenakan tarif 20% lebih tinggi
-  let pph21 = calcPph21(pkp);
+  let pph21 = calcPph21(pkp, brackets);
   if (emp.npwp === "-") pph21 = Math.round(pph21 * 1.2);
 
   const koperasi = r > 0.5 ? 100000 : 0;

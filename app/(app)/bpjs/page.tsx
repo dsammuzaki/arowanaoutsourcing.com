@@ -1,12 +1,11 @@
 import { PageHeader, Card, Badge } from "@/components/ui";
 import { HeartPulse, ShieldCheck, Building2 } from "lucide-react";
-import { calcPayroll, clients, bpjsRates } from "@/lib/data";
+import { calcPayroll, clients } from "@/lib/data";
 import { getEmployees } from "@/lib/server-data";
+import { getPayrollConfig } from "@/lib/settings";
 import { rupiah } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-const CLIENT_RATE = bpjsRates.jhtClient + bpjsRates.jkkClient + bpjsRates.jkmClient + bpjsRates.jpClient + bpjsRates.kesehatanClient;
 
 function bpjsNo(prefix: string, id: string) {
   const raw = id.split("-")[1] ?? "0";
@@ -15,11 +14,14 @@ function bpjsNo(prefix: string, id: string) {
 }
 
 export default async function BpjsPage() {
-  const employees = await getEmployees();
+  const [employees, cfg] = await Promise.all([getEmployees(), getPayrollConfig()]);
+  const bpjsRates = cfg.bpjsRates;
+  const CLIENT_RATE =
+    bpjsRates.jhtClient + bpjsRates.jkkClient + bpjsRates.jkmClient + bpjsRates.jpClient + bpjsRates.kesehatanClient;
   const rows = employees
     .filter((e) => e.status === "aktif")
     .map((e) => {
-      const p = calcPayroll(e);
+      const p = calcPayroll(e, 0, cfg);
       const iuranPerusahaan = Math.round((p.gross * CLIENT_RATE) / 100);
       return {
         id: e.id,
