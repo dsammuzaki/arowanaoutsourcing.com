@@ -16,7 +16,7 @@ export type ShellUser = { email: string; name: string; role: string } | null;
 
 // Role terbatas: hanya boleh melihat halaman tertentu
 const ROLE_PAGES: Record<string, string[]> = {
-  hr_pic: ["/dashboard", "/karyawan", "/absensi", "/chat"],
+  hr_pic: ["/dashboard", "/karyawan", "/absensi", "/proyek", "/chat"],
   customer: ["/dashboard", "/absensi", "/karyawan", "/bpjs", "/payroll", "/chat"],
 };
 import {
@@ -69,7 +69,7 @@ const nav: NavSection[] = [
     items: [
       { href: "/rekrutmen", label: "Rekrutmen", Icon: UserPlus },
       { href: "/kontrak", label: "Monitoring Kontrak", Icon: FileClock },
-      { href: "/proyek", label: "Manajemen Proyek", Icon: SquareKanban },
+      { href: "/proyek", label: "Task", Icon: SquareKanban },
       { href: "/cuti", label: "Manajemen Cuti", Icon: CalendarDays },
       { href: "/kinerja", label: "Kinerja & KPI", Icon: Target },
     ],

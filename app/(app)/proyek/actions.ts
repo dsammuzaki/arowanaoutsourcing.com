@@ -54,12 +54,12 @@ export async function createTask(input: NewTask): Promise<{ ok: boolean; error?:
   if (error) return { ok: false, error: error.message };
   await sendEmail(
     await getEmailsByRoles(["super_admin", "operation", "director"]),
-    "Tugas proyek baru",
+    "Task baru",
     emailHtml({
       title: "Task baru ditambahkan",
-      intro: `Tugas "${input.title.trim()}" (PJ: ${input.assignee || "-"}) telah dibuat di Manajemen Proyek.`,
+      intro: `Tugas "${input.title.trim()}" (PJ: ${input.assignee || "-"}) telah dibuat di menu Task.`,
       ctaPath: "/proyek",
-      ctaLabel: "Buka Manajemen Proyek",
+      ctaLabel: "Buka Task",
     })
   );
   revalidatePath("/proyek");

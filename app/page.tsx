@@ -47,7 +47,7 @@ export default function LoginPage() {
 
           {/* Chip fitur mengambang */}
           <div className="mt-6 flex max-w-md flex-wrap gap-2">
-            {["Payroll & PPh 21", "Invoice Klien", "Absensi GPS", "BPJS", "Manajemen Proyek", "Slip Gaji"].map((f, i) => (
+            {["Payroll & PPh 21", "Invoice Klien", "Absensi GPS", "BPJS", "Manajemen Task", "Slip Gaji"].map((f, i) => (
               <span
                 key={f}
                 className="floaty rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-xs text-white/85 backdrop-blur"

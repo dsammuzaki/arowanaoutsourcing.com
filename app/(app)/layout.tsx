@@ -46,7 +46,7 @@ const PAGES: SearchItem[] = [
   { label: "Absensi", href: "/absensi", kind: "halaman" },
   { label: "Rekrutmen & Onboarding", href: "/rekrutmen", kind: "halaman" },
   { label: "Monitoring Kontrak", href: "/kontrak", kind: "halaman" },
-  { label: "Manajemen Proyek", href: "/proyek", kind: "halaman" },
+  { label: "Task", href: "/proyek", kind: "halaman" },
   { label: "Manajemen Cuti", href: "/cuti", kind: "halaman" },
   { label: "Kinerja & KPI", href: "/kinerja", kind: "halaman" },
   { label: "Payroll & Slip Gaji", href: "/payroll", kind: "halaman" },

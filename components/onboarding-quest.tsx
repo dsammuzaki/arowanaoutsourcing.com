@@ -55,10 +55,10 @@ const steps: Step[] = [
   },
   {
     icon: SquareKanban,
-    title: "4. Kelola Proyek (Kanban)",
-    desc: "Buat goal/proyek, tarik kartu antar kolom, pantau harian (scrum), dan minta approval. Cocok untuk rekrutmen, payroll bulanan, atau onboarding batch.",
+    title: "4. Kelola Task (Kanban)",
+    desc: "Buat task, tarik kartu antar kolom, pantau harian (scrum), dan minta approval. Cocok untuk rekrutmen, payroll bulanan, atau onboarding batch.",
     href: "/proyek",
-    hrefLabel: "Buka Proyek",
+    hrefLabel: "Buka Task",
   },
   {
     icon: CalendarDays,

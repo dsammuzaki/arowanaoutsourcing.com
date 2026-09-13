@@ -65,7 +65,7 @@ export default async function ProyekPage() {
   return (
     <>
       <PageHeader
-        title="Manajemen Proyek"
+        title="Task"
         subtitle={
           persist
             ? "Papan Kanban tersimpan di database — buat tugas, tarik antar kolom, approval"
