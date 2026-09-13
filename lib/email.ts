@@ -1,13 +1,39 @@
+import nodemailer from "nodemailer";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://arowanaoutsourcing-com.vercel.app";
 
-// Kirim email transaksional via Resend. Aman bila RESEND_API_KEY belum diset (no-op).
+/**
+ * Kirim email transaksional.
+ * Prioritas: SMTP (mis. Gmail) bila SMTP_HOST/SMTP_USER/SMTP_PASS diset,
+ * lalu Resend bila RESEND_API_KEY diset. Aman (no-op) bila keduanya kosong.
+ */
 export async function sendEmail(to: string | string[], subject: string, html: string) {
-  const key = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM || "Barata Sakti Utama <onboarding@resend.dev>";
   const list = Array.from(new Set((Array.isArray(to) ? to : [to]).filter(Boolean)));
-  if (!key || list.length === 0) return;
+  if (list.length === 0) return;
+  const from =
+    process.env.MAIL_FROM || process.env.SMTP_USER || "Barata Sakti Utama <onboarding@resend.dev>";
+
+  // 1) SMTP (Gmail dll.)
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      const port = Number(process.env.SMTP_PORT || 465);
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port,
+        secure: port === 465,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+      await transporter.sendMail({ from, to: list.join(","), subject, html });
+      return;
+    } catch {
+      /* fallback ke Resend bila ada */
+    }
+  }
+
+  // 2) Resend
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return;
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
