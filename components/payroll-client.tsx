@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, Badge, Avatar } from "@/components/ui";
-import { IconWallet, IconCheck } from "@/components/icons";
+import { IconWallet, IconCheck, IconPrint } from "@/components/icons";
 import { CalendarDays, Users, Building2, Download } from "lucide-react";
 import { rupiah } from "@/lib/format";
+import { printElementById } from "@/lib/print";
 
 export type PayrollLineDTO = {
   id: string;
@@ -189,9 +190,12 @@ export function PayrollClient({
             ))}
           </select>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button className="btn-outline whitespace-nowrap" onClick={exportPayrollCsv}>
-            <Download size={16} /> Slip Massal (.csv)
+            <Download size={16} /> Excel (.csv)
+          </button>
+          <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-payroll")}>
+            <IconPrint width={16} height={16} /> Cetak / PDF
           </button>
           <button
             className={`btn-primary whitespace-nowrap ${finalized ? "opacity-70" : ""}`}
@@ -218,7 +222,12 @@ export function PayrollClient({
         ))}
       </div>
 
-      <Card className="overflow-hidden">
+      <Card id="doc-payroll" className="overflow-hidden">
+        {/* Kop cetak */}
+        <div className="hidden border-b-2 border-navy px-5 py-4 print:block">
+          <p className="text-base font-bold text-navy">PT. Barata Sakti Utama</p>
+          <p className="text-[11px] text-gray-500">Laporan Payroll · {period.label}</p>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4">
           <h2 className="font-bold text-foreground">Rincian Gaji per Karyawan</h2>
           <span className="text-sm text-muted-foreground">

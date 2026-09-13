@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui";
-import { CalendarRange, Loader2 } from "lucide-react";
+import { CalendarRange, Loader2, Download, Printer } from "lucide-react";
 import { getMonthlyRecap, type RecapResult, type RecapCell } from "@/app/(app)/absensi/actions";
+import { printElementById } from "@/lib/print";
 
 const cellMeta: Record<Exclude<RecapCell, "">, { label: string; cls: string }> = {
   H: { label: "Hadir", cls: "bg-primary/10 text-primary" },
@@ -42,6 +43,26 @@ export function RecapSection({ initialYear, initialMonth }: { initialYear: numbe
     { label: "Sakit", value: counts.S, cls: "bg-indigo-50 text-indigo-700" },
     { label: "Cuti", value: counts.C, cls: "bg-emerald-50 text-emerald-700" },
   ];
+
+  function exportCsv() {
+    if (!data?.rows.length) return;
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const header = ["Nama", "Posisi", ...dayList.map((d) => String(d)), "Hadir", "Izin", "Sakit", "Cuti"];
+    const body = data.rows.map((r) => {
+      const c = { H: 0, I: 0, S: 0, C: 0 };
+      r.cells.forEach((x) => x && c[x as "H" | "I" | "S" | "C"]++);
+      return [r.name, r.position, ...r.cells.map((x) => x || "-"), c.H, c.I, c.S, c.C].map(esc).join(",");
+    });
+    const blob = new Blob(["﻿" + header.map(esc).join(",") + "\n" + body.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rekap-absensi-${MONTHS[month - 1].toLowerCase()}-${year}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <>
@@ -89,7 +110,11 @@ export function RecapSection({ initialYear, initialMonth }: { initialYear: numbe
       </div>
 
       {/* Grid rekap harian */}
-      <Card className="overflow-hidden">
+      <Card id="doc-rekap" className="overflow-hidden">
+        <div className="hidden border-b-2 border-navy px-4 py-3 print:block">
+          <p className="text-base font-bold text-navy">PT. Barata Sakti Utama</p>
+          <p className="text-[11px] text-gray-500">Rekap Kehadiran · {MONTHS[month - 1]} {year}</p>
+        </div>
         <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
           <span className="mr-2 text-sm font-semibold text-foreground">
             {MONTHS[month - 1]} {year} · {days} hari
@@ -99,6 +124,14 @@ export function RecapSection({ initialYear, initialMonth }: { initialYear: numbe
               {k} · {cellMeta[k].label}
             </span>
           ))}
+          <div className="ml-auto flex gap-2 print:hidden">
+            <button className="btn-outline px-2.5 py-1 text-xs" onClick={exportCsv}>
+              <Download size={13} /> Excel
+            </button>
+            <button className="btn-outline px-2.5 py-1 text-xs" onClick={() => printElementById("doc-rekap")}>
+              <Printer size={13} /> PDF
+            </button>
+          </div>
         </div>
 
         {loading ? (
