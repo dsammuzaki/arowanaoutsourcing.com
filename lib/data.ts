@@ -970,6 +970,20 @@ export interface ProjectTask {
   comments: number;
   approvalStatus: ApprovalStatus;
   approver: string;
+  // Alur kerja (schema-8): penugasan & hasil
+  assigneeId?: string;
+  reviewerId?: string;
+  resultNote?: string;
+  resultUrl?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+}
+
+// Peran yang boleh MEMBUAT & MENINJAU task (manajer ke atas). Sisanya = staf.
+export const TASK_MANAGER_ROLES = ["super_admin", "director", "operation"] as const;
+export function canManageTasks(role?: string): boolean {
+  return TASK_MANAGER_ROLES.includes((role ?? "") as (typeof TASK_MANAGER_ROLES)[number]);
 }
 
 const A = (n: string) => n;
