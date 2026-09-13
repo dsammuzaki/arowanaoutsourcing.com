@@ -34,6 +34,7 @@ import { rupiah, tanggal, initials } from "@/lib/format";
 import { PrintButton } from "@/components/print-button";
 import { Logo } from "@/components/logo";
 import { AjukanPerubahanButton } from "@/components/ajukan-perubahan";
+import { AturKontrakButton } from "@/components/kontrak-form";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 
 // Ambil karyawan + kontrak: coba database dulu, lalu fallback data contoh.
@@ -120,6 +121,7 @@ export default async function KaryawanDetailPage({
     }
   }
   const canRequest = role === "hr_pic" || role === "customer";
+  const canManage = ["super_admin", "operation", "director"].includes(role);
 
   const client = clientById(emp.clientId);
   const entity = legalEntities.find((e) => e.id === client?.entityId);
@@ -152,7 +154,8 @@ export default async function KaryawanDetailPage({
         <Link href="/kontrak" className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
           <ArrowLeft size={16} /> Kembali ke Monitoring Kontrak
         </Link>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {canManage && <AturKontrakButton employeeId={emp.id} defaultType={emp.contractType} />}
           {canRequest && (
             <AjukanPerubahanButton
               emp={{

@@ -12,9 +12,32 @@ import {
   REF_DATE,
 } from "@/lib/data";
 import { getEmployees } from "@/lib/server-data";
+import { cookies } from "next/headers";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { tanggal } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+type LatestContract = { start_date?: string; end_date?: string; term_months?: number };
+
+async function getLatestContracts(): Promise<Record<string, LatestContract>> {
+  const latest: Record<string, LatestContract> = {};
+  if (!isSupabaseConfigured()) return latest;
+  try {
+    const sb = createClient(await cookies());
+    const { data } = await sb
+      .from("contracts")
+      .select("employee_id,start_date,end_date,term_months")
+      .order("start_date", { ascending: false });
+    for (const c of data ?? []) {
+      const eid = c.employee_id as string | null;
+      if (eid && !latest[eid]) latest[eid] = c as LatestContract;
+    }
+  } catch {
+    /* abaikan */
+  }
+  return latest;
+}
 
 function barColor(status: string) {
   if (status === "berakhir") return "#c0392b";
@@ -23,11 +46,14 @@ function barColor(status: string) {
 }
 
 export default async function KontrakPage() {
-  const employees = await getEmployees();
+  const [employees, latest] = await Promise.all([getEmployees(), getLatestContracts()]);
   // urutan: paling mendesak dulu (sisa hari terkecil)
   const rows = employees
     .filter((e) => e.status === "aktif")
-    .map((e) => deriveContract(e))
+    .map((e) => {
+      const c = latest[e.id];
+      return deriveContract(e, c?.start_date, c?.end_date, c?.term_months ?? 12);
+    })
     .sort((a, b) => a.remainingDays - b.remainingDays);
   const kontrakStats = {
     total: rows.length,
