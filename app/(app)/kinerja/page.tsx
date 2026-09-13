@@ -10,6 +10,10 @@ import {
   employees,
 } from "@/lib/data";
 import { KinerjaGoals, type GoalDTO } from "@/components/kinerja-goals";
+import { cookies } from "next/headers";
+import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 function scoreTone(v: number) {
   if (v >= 85) return "text-emerald-600";
@@ -22,7 +26,7 @@ function barColor(v: number) {
   return "#c0392b";
 }
 
-const goalDtos: GoalDTO[] = goals.map((g) => ({
+const mockGoalDtos: GoalDTO[] = goals.map((g) => ({
   id: g.id,
   title: g.title,
   employeeName: employeeById(g.employeeId)?.name ?? "?",
@@ -31,7 +35,32 @@ const goalDtos: GoalDTO[] = goals.map((g) => ({
 }));
 const empNames = employees.filter((e) => e.status === "aktif").map((e) => e.name);
 
-export default function KinerjaPage() {
+async function getGoals(): Promise<{ dtos: GoalDTO[]; persist: boolean }> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const { data } = await sb.from("goals").select("id,title,employee_name,due_date,progress").order("created_at", { ascending: false });
+      if (data) {
+        return {
+          dtos: data.map((g) => ({
+            id: String(g.id),
+            title: g.title,
+            employeeName: g.employee_name ?? "?",
+            due: g.due_date ?? "",
+            progress: g.progress ?? 0,
+          })),
+          persist: true,
+        };
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+  return { dtos: mockGoalDtos, persist: false };
+}
+
+export default async function KinerjaPage() {
+  const { dtos: goalDtos, persist } = await getGoals();
   const stats = [
     { label: "Skor KPI Rata-rata", value: kinerjaStats.skorRata, Icon: Gauge, suffix: "" },
     { label: "Goal Aktif", value: kinerjaStats.goalAktif, Icon: Target, suffix: "" },
@@ -109,7 +138,7 @@ export default function KinerjaPage() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Goals */}
         <Card className="overflow-hidden lg:col-span-2">
-          <KinerjaGoals goals={goalDtos} employees={empNames} />
+          <KinerjaGoals goals={goalDtos} employees={empNames} persist={persist} />
         </Card>
 
         {/* Awards */}

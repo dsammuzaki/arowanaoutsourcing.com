@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 const REVIEW_ROLES = ["super_admin", "operation", "director"];
 // field yang boleh diubah lewat permintaan (kind 'karyawan')
@@ -89,6 +90,7 @@ export async function reviewChange(
     .update({ status: action, reviewed_by: user.id, reviewer_note: note ?? null, reviewed_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await logAudit(`Persetujuan: ${action}`, cr.target_label ?? cr.target_id ?? "", cr.kind);
   revalidatePath("/persetujuan");
   revalidatePath("/karyawan");
   return { ok: true };

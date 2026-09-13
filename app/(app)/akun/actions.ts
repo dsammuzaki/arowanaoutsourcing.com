@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 const ROLES = ["super_admin", "operation", "director", "finance", "hr_pic", "customer"] as const;
 type Role = (typeof ROLES)[number];
@@ -55,6 +56,7 @@ export async function createAccount(input: NewAccount): Promise<{ ok: boolean; e
     });
     if (pErr) return { ok: false, error: "Akun dibuat tapi profil gagal: " + pErr.message };
   }
+  await logAudit("Buat akun", email, role);
   revalidatePath("/akun");
   return { ok: true };
 }
@@ -66,6 +68,7 @@ export async function updateRole(id: string, role: string): Promise<{ ok: boolea
   if (!ROLES.includes(role as Role)) return { ok: false, error: "Role tidak dikenal." };
   const { error } = await gate.admin.from("profiles").update({ role }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await logAudit("Ubah role akun", id, role);
   revalidatePath("/akun");
   return { ok: true };
 }
@@ -76,6 +79,7 @@ export async function deleteAccount(id: string): Promise<{ ok: boolean; error?: 
   if (id === gate.meId) return { ok: false, error: "Tidak bisa menghapus akun sendiri." };
   const { error } = await gate.admin.auth.admin.deleteUser(id);
   if (error) return { ok: false, error: error.message };
+  await logAudit("Hapus akun", id);
   // profil ikut terhapus lewat ON DELETE CASCADE
   revalidatePath("/akun");
   return { ok: true };
@@ -106,6 +110,7 @@ export async function updateAccount(
   } catch {
     /* abaikan */
   }
+  await logAudit("Edit akun", id, `${fullName} · ${role}`);
   revalidatePath("/akun");
   return { ok: true };
 }
@@ -117,5 +122,6 @@ export async function resetPassword(id: string, password: string): Promise<{ ok:
   if (!password || password.length < 8) return { ok: false, error: "Password minimal 8 karakter." };
   const { error } = await gate.admin.auth.admin.updateUserById(id, { password });
   if (error) return { ok: false, error: error.message };
+  await logAudit("Reset password akun", id);
   return { ok: true };
 }

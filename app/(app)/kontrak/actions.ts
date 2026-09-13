@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 const MANAGE_ROLES = ["super_admin", "operation", "director"];
 
@@ -47,6 +48,7 @@ export async function saveContract(input: ContractInput): Promise<{ ok: boolean;
   });
   if (error) return { ok: false, error: error.message };
 
+  await logAudit("Atur/perpanjang kontrak", input.employeeId, `${term} bulan · mulai ${input.startDate}`);
   revalidatePath("/kontrak");
   revalidatePath(`/kontrak/${input.employeeId}`);
   return { ok: true };

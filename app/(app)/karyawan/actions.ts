@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 const ALLOWED_ROLES = ["super_admin", "operation"];
 
@@ -71,6 +72,7 @@ export async function createEmployee(formData: FormData): Promise<{ ok: boolean;
   const { error } = await writer.from("employees").insert(row);
   if (error) return { ok: false, error: error.message };
 
+  await logAudit("Tambah karyawan", name);
   revalidatePath("/karyawan");
   return { ok: true };
 }

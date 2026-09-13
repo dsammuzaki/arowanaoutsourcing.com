@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { createAdminClient, hasAdmin } from "@/utils/supabase/admin";
+import { logAudit } from "@/lib/audit";
 
 // Ambang keamanan
 const MAX_ACCURACY_M = 100; // GPS lebih buruk dari ini = tidak akurat
@@ -80,6 +81,7 @@ export async function deleteAttendance(id: string): Promise<{ ok: boolean; error
   }
   const { error } = await admin.from("attendance").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await logAudit("Hapus absensi", id);
   revalidatePath("/absensi");
   return { ok: true };
 }

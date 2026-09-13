@@ -35,6 +35,7 @@ import {
   ShieldCheck,
   HeartPulse,
   ClipboardCheck,
+  History,
   LogOut,
   Menu,
   X,
@@ -79,6 +80,7 @@ const nav: NavSection[] = [
     items: [
       { href: "/akun", label: "Manajemen Akun", Icon: ShieldCheck, roles: ["super_admin"] },
       { href: "/persetujuan", label: "Persetujuan", Icon: ClipboardCheck, roles: ["super_admin", "operation", "director"] },
+      { href: "/audit", label: "Log Aktivitas", Icon: History, roles: ["super_admin", "director"] },
       { href: "/about", label: "Tentang BSU", Icon: Info },
       { href: "/pengaturan", label: "Pengaturan", Icon: Settings },
     ],

@@ -13,7 +13,7 @@ import { cookies } from "next/headers";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { BuatLowonganButton } from "@/components/create-forms";
 import { JobTable, type JobRow } from "@/components/job-table";
-import { CandidatePipeline } from "@/components/candidate-pipeline";
+import { CandidatePipeline, type Cand } from "@/components/candidate-pipeline";
 import { clients as mockClients } from "@/lib/data";
 
 async function getJobs(): Promise<{ jobs: JobRow[]; clientList: { id: string; name: string }[]; clientMap: Record<string, string> }> {
@@ -39,8 +39,37 @@ async function getJobs(): Promise<{ jobs: JobRow[]; clientList: { id: string; na
   return { jobs, clientList, clientMap };
 }
 
+async function getCandidates(): Promise<{ list: Cand[]; persist: boolean }> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const { data } = await sb.from("candidates").select("id,name,position,source,score,stage").order("created_at", { ascending: false });
+      if (data) {
+        return {
+          list: data.map((c) => ({
+            id: String(c.id),
+            name: c.name,
+            position: c.position ?? "",
+            source: c.source ?? "",
+            score: c.score ?? 70,
+            stage: c.stage ?? "Pelamar",
+          })),
+          persist: true,
+        };
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+  return {
+    list: candidates.map((c) => ({ id: c.id, name: c.name, position: c.position, source: c.source, score: c.score, stage: c.stage })),
+    persist: false,
+  };
+}
+
 export default async function RekrutmenPage() {
   const { jobs, clientList, clientMap } = await getJobs();
+  const { list: candList, persist: candPersist } = await getCandidates();
   const stats = [
     { label: "Lowongan Aktif", value: recruitmentStats.lowonganAktif, Icon: Briefcase },
     { label: "Total Pelamar", value: recruitmentStats.totalPelamar, Icon: Users },
@@ -73,15 +102,9 @@ export default async function RekrutmenPage() {
       <Card className="mb-6 p-5">
         <CandidatePipeline
           stages={candidateStages}
-          candidates={candidates.map((c) => ({
-            id: c.id,
-            name: c.name,
-            position: c.position,
-            source: c.source,
-            score: c.score,
-            stage: c.stage,
-          }))}
+          candidates={candList}
           positions={Array.from(new Set(jobPostings.map((j) => j.title)))}
+          persist={candPersist}
         />
       </Card>
 

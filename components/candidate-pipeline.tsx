@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Badge, Avatar } from "@/components/ui";
 import { Modal } from "@/components/modal";
+import { createCandidate, moveCandidate } from "@/app/(app)/rekrutmen/actions";
 
 export type Cand = {
   id: string;
@@ -26,29 +28,49 @@ export function CandidatePipeline({
   stages,
   candidates: initial,
   positions,
+  persist = false,
 }: {
   stages: string[];
   candidates: Cand[];
   positions: string[];
+  persist?: boolean;
 }) {
+  const router = useRouter();
   const [cands, setCands] = useState<Cand[]>(initial);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [detail, setDetail] = useState<Cand | null>(null);
 
   const [form, setForm] = useState({ name: "", position: positions[0] ?? "", source: "Referral", stage: stages[0] });
 
   function move(id: string, stage: string) {
-    setCands((cs) => cs.map((c) => (c.id === id ? { ...c, stage } : c)));
+    const prev = cands.find((c) => c.id === id)?.stage;
+    setCands((cs) => cs.map((c) => (c.id === id ? { ...c, stage } : c))); // optimistic
+    if (persist) {
+      moveCandidate(id, stage).then((res) => {
+        if (!res.ok && prev) setCands((cs) => cs.map((c) => (c.id === id ? { ...c, stage: prev } : c)));
+      });
+    }
   }
   function shift(c: Cand, dir: -1 | 1) {
     const idx = stages.indexOf(c.stage);
     const next = stages[Math.min(stages.length - 1, Math.max(0, idx + dir))];
     if (next) move(c.id, next);
   }
-  function addCand() {
+  async function addCand() {
     if (!form.name.trim()) return;
+    if (persist) {
+      setBusy(true);
+      const res = await createCandidate({ name: form.name.trim(), position: form.position, source: form.source, stage: form.stage });
+      setBusy(false);
+      if (!res.ok) return alert(res.error || "Gagal menyimpan kandidat.");
+      setForm({ ...form, name: "" });
+      setCreating(false);
+      router.refresh();
+      return;
+    }
     setCands((cs) => [
       { id: `cand-${Date.now()}`, name: form.name.trim(), position: form.position, source: form.source, score: 70, stage: form.stage },
       ...cs,
@@ -159,8 +181,8 @@ export function CandidatePipeline({
             <button className="btn-ghost" onClick={() => setCreating(false)}>
               Batal
             </button>
-            <button className="btn-primary" onClick={addCand}>
-              Tambah
+            <button className="btn-primary" onClick={addCand} disabled={busy}>
+              {busy ? "Menyimpan…" : "Tambah"}
             </button>
           </div>
         }

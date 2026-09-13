@@ -36,3 +36,46 @@ export async function createJobPosting(formData: FormData): Promise<{ ok: boolea
   revalidatePath("/rekrutmen");
   return { ok: true };
 }
+
+async function candWriter() {
+  const sb = createClient(await cookies());
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  return { w: hasAdmin() ? createAdminClient() : sb, user };
+}
+
+export async function createCandidate(input: {
+  name: string;
+  position: string;
+  source: string;
+  stage: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Supabase belum aktif." };
+  const { w, user } = await candWriter();
+  if (!user) return { ok: false, error: "Sesi habis." };
+  if (!input.name?.trim()) return { ok: false, error: "Nama kandidat wajib diisi." };
+  const { error } = await w.from("candidates").insert({
+    name: input.name.trim(),
+    position: input.position || null,
+    source: input.source || null,
+    stage: input.stage || "Pelamar",
+    score: 70,
+  });
+  if (error) {
+    if (/schema cache|does not exist|PGRST205/i.test(error.message))
+      return { ok: false, error: "Tabel candidates belum dibuat. Jalankan schema-6.sql." };
+    return { ok: false, error: error.message };
+  }
+  revalidatePath("/rekrutmen");
+  return { ok: true };
+}
+
+export async function moveCandidate(id: string, stage: string): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Supabase belum aktif." };
+  const { w, user } = await candWriter();
+  if (!user) return { ok: false, error: "Sesi habis." };
+  const { error } = await w.from("candidates").update({ stage }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}

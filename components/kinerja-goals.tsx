@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Target } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { Modal } from "@/components/modal";
 import { tanggal } from "@/lib/format";
+import { createGoal, updateGoalProgress } from "@/app/(app)/kinerja/actions";
 
 export type GoalDTO = {
   id: string;
@@ -25,10 +27,12 @@ function barColor(v: number) {
   return "#c0392b";
 }
 
-export function KinerjaGoals({ goals: initial, employees }: { goals: GoalDTO[]; employees: string[] }) {
+export function KinerjaGoals({ goals: initial, employees, persist = false }: { goals: GoalDTO[]; employees: string[]; persist?: boolean }) {
+  const router = useRouter();
   const [goals, setGoals] = useState<GoalDTO[]>(initial);
   const [creating, setCreating] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const [title, setTitle] = useState("");
   const [emp, setEmp] = useState(employees[0] ?? "");
@@ -37,12 +41,20 @@ export function KinerjaGoals({ goals: initial, employees }: { goals: GoalDTO[]; 
 
   const detail = goals.find((g) => g.id === detailId) || null;
 
-  function create() {
+  async function create() {
     if (!title.trim()) return;
-    setGoals((gs) => [
-      { id: `g-${Date.now()}`, title: title.trim(), employeeName: emp, due, progress },
-      ...gs,
-    ]);
+    if (persist) {
+      setBusy(true);
+      const res = await createGoal({ title: title.trim(), employeeName: emp, due, progress });
+      setBusy(false);
+      if (!res.ok) return alert(res.error || "Gagal menyimpan goal.");
+      setTitle("");
+      setProgress(0);
+      setCreating(false);
+      router.refresh();
+      return;
+    }
+    setGoals((gs) => [{ id: `g-${Date.now()}`, title: title.trim(), employeeName: emp, due, progress }, ...gs]);
     setTitle("");
     setProgress(0);
     setCreating(false);
@@ -50,6 +62,15 @@ export function KinerjaGoals({ goals: initial, employees }: { goals: GoalDTO[]; 
 
   function setGoalProgress(id: string, val: number) {
     setGoals((gs) => gs.map((g) => (g.id === id ? { ...g, progress: val } : g)));
+  }
+
+  async function saveProgress(id: string, val: number) {
+    setGoalProgress(id, val);
+    if (persist) {
+      const res = await updateGoalProgress(id, val);
+      if (!res.ok) alert(res.error || "Gagal menyimpan progres.");
+      else router.refresh();
+    }
   }
 
   return (
@@ -100,8 +121,8 @@ export function KinerjaGoals({ goals: initial, employees }: { goals: GoalDTO[]; 
             <button className="btn-ghost" onClick={() => setCreating(false)}>
               Batal
             </button>
-            <button className="btn-primary" onClick={create}>
-              Simpan Goal
+            <button className="btn-primary" onClick={create} disabled={busy}>
+              {busy ? "Menyimpan…" : "Simpan Goal"}
             </button>
           </div>
         }
@@ -166,10 +187,15 @@ export function KinerjaGoals({ goals: initial, employees }: { goals: GoalDTO[]; 
             </div>
             <div className="flex flex-wrap gap-2">
               {[25, 50, 75, 100].map((v) => (
-                <button key={v} className="btn-outline px-3 py-1.5 text-xs" onClick={() => setGoalProgress(detail.id, v)}>
+                <button key={v} className="btn-outline px-3 py-1.5 text-xs" onClick={() => saveProgress(detail.id, v)}>
                   Set {v}%
                 </button>
               ))}
+              {persist && (
+                <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => saveProgress(detail.id, detail.progress)}>
+                  Simpan Progres
+                </button>
+              )}
             </div>
           </div>
         )}
