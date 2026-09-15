@@ -1,13 +1,20 @@
 import { PageHeader } from "@/components/ui";
 import { calcPayroll, calcRecap, contractTypeLabel } from "@/lib/data";
-import { getEmployees, getClients } from "@/lib/server-data";
+import { getEmployees, getClients, getRecapComponents } from "@/lib/server-data";
 import { getPayrollConfig } from "@/lib/settings";
 import { PayrollClient, type PayrollLineDTO, type RecapLineDTO } from "@/components/payroll-client";
 
 export const dynamic = "force-dynamic";
 
+const RECAP_PERIOD = "2026-08"; // periode data rekap yang diimpor (Agustus 2026)
+
 export default async function PayrollPage() {
-  const [employees, clients, cfg] = await Promise.all([getEmployees(), getClients(), getPayrollConfig()]);
+  const [employees, clients, cfg, components] = await Promise.all([
+    getEmployees(),
+    getClients(),
+    getPayrollConfig(),
+    getRecapComponents(RECAP_PERIOD),
+  ]);
   const clientOptions = clients.map((c) => ({ id: c.id, name: c.name }));
   const active = employees.filter((e) => e.status === "aktif");
 
@@ -40,7 +47,8 @@ export default async function PayrollPage() {
         ppnPct: client?.ppnPct ?? 12,
         pph23Pct: client?.pph23Pct ?? 2,
       },
-      cfg
+      cfg,
+      components[e.id]
     );
     return {
       id: e.id,

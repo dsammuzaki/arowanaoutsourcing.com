@@ -62,7 +62,7 @@ const RECAP_COLS: { key: keyof RecapLineDTO; label: string; strong?: boolean }[]
   { key: "rapel", label: "Rapel Gaji" },
   { key: "potKedukaan", label: "Pot. Kedukaan" },
   { key: "potKoperasi", label: "Pot. Koperasi" },
-  { key: "iph", label: "IPH" },
+  { key: "iph", label: "IPH / Pot. Perush." },
   { key: "tunjJabatan", label: "Tunj. Jabatan" },
   { key: "tunjKehadiran", label: "Tunj. Kehadiran" },
   { key: "salaryThisMonth", label: "Salary This Month", strong: true },

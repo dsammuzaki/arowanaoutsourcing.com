@@ -6,6 +6,7 @@ import {
   type Employee,
   type ContractType,
   type Client,
+  type RecapInput,
 } from "@/lib/data";
 
 type Row = Record<string, unknown>;
@@ -86,4 +87,36 @@ export async function getClients(): Promise<Client[]> {
     }
   }
   return mockClients;
+}
+
+/**
+ * Komponen rekap per karyawan untuk satu periode ("YYYY-MM"), dari tabel
+ * recap_components. Dipakai tabel Rekapitulasi Pendapatan. Bila tabel belum
+ * ada / kosong → {} (komponen default 0).
+ */
+export async function getRecapComponents(period: string): Promise<Record<string, Partial<RecapInput>>> {
+  const out: Record<string, Partial<RecapInput>> = {};
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const { data } = await sb.from("recap_components").select("*").eq("period", period);
+      for (const r of (data ?? []) as Row[]) {
+        out[String(r.employee_id)] = {
+          days: (r.days as number) ?? 21,
+          tambahan: Number(r.tambahan) || 0,
+          kompensasi: Number(r.kompensasi) || 0,
+          rapel: Number(r.rapel) || 0,
+          potKedukaan: Number(r.pot_kedukaan) || 0,
+          potKoperasi: Number(r.pot_koperasi) || 0,
+          iph: Number(r.iph) || 0,
+          tunjJabatan: Number(r.tunj_jabatan) || 0,
+          tunjKehadiran: Number(r.tunj_kehadiran) || 0,
+          tunjEquipment: Number(r.tunj_equipment) || 0,
+        };
+      }
+    } catch {
+      /* tabel mungkin belum dibuat */
+    }
+  }
+  return out;
 }
