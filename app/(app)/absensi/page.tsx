@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { PageHeader } from "@/components/ui";
-import { employees as mockEmployees, clients } from "@/lib/data";
+import { employees as mockEmployees } from "@/lib/data";
+import { getClients } from "@/lib/server-data";
 import { LiveAttendance } from "@/components/live-attendance";
 import { AttendanceLog, type LogRow } from "@/components/attendance-log";
 import { RecapSection } from "@/components/recap-section";
@@ -48,7 +49,7 @@ async function getData() {
 }
 
 export default async function AbsensiPage() {
-  const { empOptions, log, sites, canDelete } = await getData();
+  const [{ empOptions, log, sites, canDelete }, clients] = await Promise.all([getData(), getClients()]);
   const now = new Date();
 
   return (

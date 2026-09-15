@@ -5,7 +5,8 @@ import { Card, Badge } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { IconPrint, IconDownload } from "@/components/icons";
 import { PrintButton } from "@/components/print-button";
-import { employeeById, calcPayroll, clients, legalEntities, contractTypeLabel } from "@/lib/data";
+import { calcPayroll, legalEntities, contractTypeLabel } from "@/lib/data";
+import { getEmployees, getClients } from "@/lib/server-data";
 import { rupiah } from "@/lib/format";
 
 export default async function SlipPage({
@@ -14,9 +15,9 @@ export default async function SlipPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const emp = employeeById(id);
+  const [emps, clients, cfg] = await Promise.all([getEmployees(), getClients(), getPayrollConfig()]);
+  const emp = emps.find((e) => e.id === id);
   if (!emp) notFound();
-  const cfg = await getPayrollConfig();
   const l = calcPayroll(emp, 0, cfg);
   const client = clients.find((c) => c.id === emp.clientId);
   const entity = legalEntities.find((e) => e.id === client?.entityId);

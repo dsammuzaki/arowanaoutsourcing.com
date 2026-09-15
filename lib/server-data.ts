@@ -1,6 +1,12 @@
 import { cookies } from "next/headers";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
-import { employees as mockEmployees, type Employee, type ContractType } from "@/lib/data";
+import {
+  employees as mockEmployees,
+  clients as mockClients,
+  type Employee,
+  type ContractType,
+  type Client,
+} from "@/lib/data";
 
 type Row = Record<string, unknown>;
 
@@ -44,4 +50,40 @@ export async function getEmployees(clientId?: string): Promise<Employee[]> {
     }
   }
   return clientId ? mockEmployees.filter((e) => e.clientId === clientId) : mockEmployees;
+}
+
+function mapClient(c: Row): Client {
+  return {
+    id: String(c.id),
+    name: (c.name as string) ?? "-",
+    entityId: (c.entity_id as string) ?? "",
+    contractType: ((c.contract_type as string) ?? "staff") as ContractType,
+    headcount: (c.headcount as number) ?? 0,
+    managementFeePct: Number(c.management_fee_pct) || 0,
+    ppnPct: Number(c.ppn_pct) || 12,
+    pph23Pct: Number(c.pph23_pct) || 2,
+    spkNumber: (c.spk_number as string) ?? "",
+    periodStart: (c.period_start as string) ?? "",
+    periodEnd: (c.period_end as string) ?? "",
+  };
+}
+
+/**
+ * Ambil daftar pelanggan (klien) dari database — sumber tunggal untuk
+ * semua menu (payroll, absensi, kontrak, bpjs, dst). Fallback data contoh
+ * hanya bila Supabase tidak aktif. Jika DB aktif tapi kosong → [] (klien
+ * yang dihapus tidak muncul lagi di mana pun).
+ */
+export async function getClients(): Promise<Client[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const { data } = await sb.from("clients").select("*").order("name");
+      if (data && data.length) return data.map((c) => mapClient(c as Row));
+      if (data) return []; // DB aktif tapi kosong
+    } catch {
+      /* fallback */
+    }
+  }
+  return mockClients;
 }

@@ -21,7 +21,6 @@ import {
   attendanceSummaryFor,
   calcPayroll,
   leaveApplications,
-  clientById,
   legalEntities,
   contractTypeLabel,
   formatDurasi,
@@ -36,6 +35,7 @@ import { Logo } from "@/components/logo";
 import { AjukanPerubahanButton } from "@/components/ajukan-perubahan";
 import { AturKontrakButton } from "@/components/kontrak-form";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
+import { getClients } from "@/lib/server-data";
 
 // Ambil karyawan + kontrak: coba database dulu, lalu fallback data contoh.
 async function getEmployee(
@@ -123,7 +123,8 @@ export default async function KaryawanDetailPage({
   const canRequest = role === "hr_pic" || role === "customer";
   const canManage = ["super_admin", "operation", "director"].includes(role);
 
-  const client = clientById(emp.clientId);
+  const clients = await getClients();
+  const client = clients.find((c) => c.id === emp.clientId);
   const entity = legalEntities.find((e) => e.id === client?.entityId);
   const att = attendanceSummaryFor(id);
   const pay = calcPayroll(emp);

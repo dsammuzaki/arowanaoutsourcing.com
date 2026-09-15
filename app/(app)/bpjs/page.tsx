@@ -1,7 +1,7 @@
 import { PageHeader, Card, Badge } from "@/components/ui";
 import { HeartPulse, ShieldCheck, Building2 } from "lucide-react";
-import { calcPayroll, clients } from "@/lib/data";
-import { getEmployees } from "@/lib/server-data";
+import { calcPayroll } from "@/lib/data";
+import { getEmployees, getClients } from "@/lib/server-data";
 import { getPayrollConfig } from "@/lib/settings";
 import { rupiah } from "@/lib/format";
 
@@ -14,7 +14,7 @@ function bpjsNo(prefix: string, id: string) {
 }
 
 export default async function BpjsPage() {
-  const [employees, cfg] = await Promise.all([getEmployees(), getPayrollConfig()]);
+  const [employees, clients, cfg] = await Promise.all([getEmployees(), getClients(), getPayrollConfig()]);
   const bpjsRates = cfg.bpjsRates;
   const CLIENT_RATE =
     bpjsRates.jhtClient + bpjsRates.jkkClient + bpjsRates.jkmClient + bpjsRates.jpClient + bpjsRates.kesehatanClient;

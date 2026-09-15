@@ -1,15 +1,14 @@
 import { PageHeader } from "@/components/ui";
-import { calcPayroll, calcRecap, clients, contractTypeLabel } from "@/lib/data";
-import { getEmployees } from "@/lib/server-data";
+import { calcPayroll, calcRecap, contractTypeLabel } from "@/lib/data";
+import { getEmployees, getClients } from "@/lib/server-data";
 import { getPayrollConfig } from "@/lib/settings";
 import { PayrollClient, type PayrollLineDTO, type RecapLineDTO } from "@/components/payroll-client";
 
 export const dynamic = "force-dynamic";
 
-const clientOptions = clients.map((c) => ({ id: c.id, name: c.name }));
-
 export default async function PayrollPage() {
-  const [employees, cfg] = await Promise.all([getEmployees(), getPayrollConfig()]);
+  const [employees, clients, cfg] = await Promise.all([getEmployees(), getClients(), getPayrollConfig()]);
+  const clientOptions = clients.map((c) => ({ id: c.id, name: c.name }));
   const active = employees.filter((e) => e.status === "aktif");
 
   const lines: PayrollLineDTO[] = active.map((e) => {

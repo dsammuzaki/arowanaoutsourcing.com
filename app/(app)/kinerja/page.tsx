@@ -7,9 +7,9 @@ import {
   awards,
   kinerjaStats,
   employeeById,
-  employees,
 } from "@/lib/data";
 import { KinerjaGoals, type GoalDTO } from "@/components/kinerja-goals";
+import { getEmployees } from "@/lib/server-data";
 import { cookies } from "next/headers";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 
@@ -33,8 +33,6 @@ const mockGoalDtos: GoalDTO[] = goals.map((g) => ({
   due: g.due,
   progress: g.progress,
 }));
-const empNames = employees.filter((e) => e.status === "aktif").map((e) => e.name);
-
 async function getGoals(): Promise<{ dtos: GoalDTO[]; persist: boolean }> {
   if (isSupabaseConfigured()) {
     try {
@@ -60,7 +58,8 @@ async function getGoals(): Promise<{ dtos: GoalDTO[]; persist: boolean }> {
 }
 
 export default async function KinerjaPage() {
-  const { dtos: goalDtos, persist } = await getGoals();
+  const [{ dtos: goalDtos, persist }, emps] = await Promise.all([getGoals(), getEmployees()]);
+  const empNames = emps.filter((e) => e.status === "aktif").map((e) => e.name);
   const stats = [
     { label: "Skor KPI Rata-rata", value: kinerjaStats.skorRata, Icon: Gauge, suffix: "" },
     { label: "Goal Aktif", value: kinerjaStats.goalAktif, Icon: Target, suffix: "" },

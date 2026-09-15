@@ -7,11 +7,9 @@ import {
   contractStatusLabel,
   contractTypeLabel,
   formatDurasi,
-  clientById,
-  clients,
   REF_DATE,
 } from "@/lib/data";
-import { getEmployees } from "@/lib/server-data";
+import { getEmployees, getClients } from "@/lib/server-data";
 import { cookies } from "next/headers";
 import { createClient, isSupabaseConfigured } from "@/utils/supabase/server";
 import { tanggal } from "@/lib/format";
@@ -46,7 +44,8 @@ function barColor(status: string) {
 }
 
 export default async function KontrakPage() {
-  const [employees, latest] = await Promise.all([getEmployees(), getLatestContracts()]);
+  const [employees, latest, clients] = await Promise.all([getEmployees(), getLatestContracts(), getClients()]);
+  const clientName = (id: string) => clients.find((c) => c.id === id)?.name ?? "-";
   // urutan: paling mendesak dulu (sisa hari terkecil)
   const rows = employees
     .filter((e) => e.status === "aktif")
@@ -90,7 +89,7 @@ export default async function KontrakPage() {
             rows={rows.map((c) => ({
               nama: c.employee.name,
               jabatan: c.employee.position,
-              klien: clientById(c.employee.clientId)?.name ?? "-",
+              klien: clientName(c.employee.clientId),
               jenis: contractTypeLabel[c.contractType],
               mulai: c.start,
               berakhir: c.end,
@@ -189,7 +188,7 @@ export default async function KontrakPage() {
                     </Link>
                   </td>
                   <td className="td">
-                    <p className="text-muted-foreground">{clientById(c.employee.clientId)?.name}</p>
+                    <p className="text-muted-foreground">{clientName(c.employee.clientId)}</p>
                     <Badge tone="teal">{contractTypeLabel[c.contractType]}</Badge>
                   </td>
                   <td className="td text-muted-foreground">{tanggal(c.start)}</td>
