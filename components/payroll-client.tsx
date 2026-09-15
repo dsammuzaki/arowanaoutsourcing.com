@@ -23,6 +23,61 @@ export type PayrollLineDTO = {
   method: string;
 };
 
+export type RecapLineDTO = {
+  id: string;
+  name: string;
+  clientId: string;
+  clientName: string;
+  position: string;
+  basicSalary: number;
+  days: number;
+  upahMasuk: number;
+  tambahan: number;
+  kompensasi: number;
+  rapel: number;
+  potKedukaan: number;
+  potKoperasi: number;
+  iph: number;
+  tunjJabatan: number;
+  tunjKehadiran: number;
+  salaryThisMonth: number;
+  bpjsTK: number;
+  jp: number;
+  bpjsKes: number;
+  tunjEquipment: number;
+  subTotal: number;
+  mgmtFee: number;
+  total1: number;
+  ppn: number;
+  pph23: number;
+  grandTotal: number;
+};
+
+// Kolom rekap (urutan sesuai spreadsheet Rekap BSU-ALS)
+const RECAP_COLS: { key: keyof RecapLineDTO; label: string; strong?: boolean }[] = [
+  { key: "basicSalary", label: "Basic Salary" },
+  { key: "upahMasuk", label: "Upah Masuk" },
+  { key: "tambahan", label: "Tambahan" },
+  { key: "kompensasi", label: "Kompensasi" },
+  { key: "rapel", label: "Rapel Gaji" },
+  { key: "potKedukaan", label: "Pot. Kedukaan" },
+  { key: "potKoperasi", label: "Pot. Koperasi" },
+  { key: "iph", label: "IPH" },
+  { key: "tunjJabatan", label: "Tunj. Jabatan" },
+  { key: "tunjKehadiran", label: "Tunj. Kehadiran" },
+  { key: "salaryThisMonth", label: "Salary This Month", strong: true },
+  { key: "bpjsTK", label: "BPJS TK 4,24%" },
+  { key: "jp", label: "Jaminan Pensiun 2%" },
+  { key: "bpjsKes", label: "BPJS Kesehatan 4%" },
+  { key: "tunjEquipment", label: "Tunj. Equipment" },
+  { key: "subTotal", label: "SUB TOTAL", strong: true },
+  { key: "mgmtFee", label: "Management Fee" },
+  { key: "total1", label: "TOTAL 1", strong: true },
+  { key: "ppn", label: "PPN" },
+  { key: "pph23", label: "PPh 23 2%" },
+  { key: "grandTotal", label: "Grand Total", strong: true },
+];
+
 const MONTHS = [
   "Januari",
   "Februari",
@@ -49,9 +104,11 @@ function buildPeriods(year: number) {
 
 export function PayrollClient({
   lines,
+  recap = [],
   clients,
 }: {
   lines: PayrollLineDTO[];
+  recap?: RecapLineDTO[];
   clients: { id: string; name: string }[];
 }) {
   const year = 2026;
@@ -60,6 +117,7 @@ export function PayrollClient({
   const [projectId, setProjectId] = useState("all");
   const [employeeId, setEmployeeId] = useState("all");
   const [daysWorked, setDaysWorked] = useState<Record<string, number>>({});
+  const [view, setView] = useState<"slip" | "rekap">("slip");
 
   const [finalized, setFinalized] = useState(false);
   const period = periods.find((p) => p.key === periodKey) ?? periods[7];
@@ -73,6 +131,16 @@ export function PayrollClient({
           (employeeId === "all" || l.id === employeeId)
       ),
     [lines, projectId, employeeId]
+  );
+
+  const recapFiltered = useMemo(
+    () =>
+      recap.filter(
+        (l) =>
+          (projectId === "all" || l.clientId === projectId) &&
+          (employeeId === "all" || l.id === employeeId)
+      ),
+    [recap, projectId, employeeId]
   );
 
   // Prorata linier berdasarkan hari kerja / jumlah hari bulan.
@@ -191,12 +259,16 @@ export function PayrollClient({
           </select>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="btn-outline whitespace-nowrap" onClick={exportPayrollCsv}>
-            <Download size={16} /> Excel (.csv)
-          </button>
-          <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-payroll")}>
-            <IconPrint width={16} height={16} /> Cetak / PDF
-          </button>
+          {view === "slip" && (
+            <>
+              <button className="btn-outline whitespace-nowrap" onClick={exportPayrollCsv}>
+                <Download size={16} /> Excel (.csv)
+              </button>
+              <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-payroll")}>
+                <IconPrint width={16} height={16} /> Cetak / PDF
+              </button>
+            </>
+          )}
           <button
             className={`btn-primary whitespace-nowrap ${finalized ? "opacity-70" : ""}`}
             onClick={() => {
@@ -210,6 +282,30 @@ export function PayrollClient({
         </div>
       </Card>
 
+      {/* Toggle tampilan */}
+      <div className="mb-5 inline-flex rounded-lg border border-border bg-card p-0.5">
+        <button
+          onClick={() => setView("slip")}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+            view === "slip" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          Slip Gaji
+        </button>
+        <button
+          onClick={() => setView("rekap")}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+            view === "rekap" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          Rekapitulasi Pendapatan
+        </button>
+      </div>
+
+      {view === "rekap" ? (
+        <RecapView rows={recapFiltered} periodLabel={period.label} />
+      ) : (
+      <>
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((s) => (
           <Card key={s.label} className="p-4">
@@ -307,6 +403,123 @@ export function PayrollClient({
           Ubah kolom Hari Kerja untuk menghitung gaji sesuai kehadiran.
         </p>
       </Card>
+      </>
+      )}
     </>
+  );
+}
+
+// ---- Rekapitulasi Pendapatan (invoice recap ARMAS) ----
+function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: string }) {
+  const totals = rows.reduce(
+    (acc, r) => {
+      for (const c of RECAP_COLS) acc[c.key as string] = (acc[c.key as string] ?? 0) + (r[c.key] as number);
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  function exportRecapCsv() {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const head = ["Nama", "Jabatan", "Klien", "Hari", ...RECAP_COLS.map((c) => c.label)];
+    const body = rows.map((r) =>
+      [r.name, r.position, r.clientName, r.days, ...RECAP_COLS.map((c) => r[c.key])].map(esc).join(",")
+    );
+    const foot = ["TOTAL", "", "", "", ...RECAP_COLS.map((c) => totals[c.key as string] ?? 0)].map(esc).join(",");
+    const blob = new Blob(["﻿" + [head.map(esc).join(","), ...body, foot].join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rekap-pendapatan-${periodLabel.replace(" ", "-").toLowerCase()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  const money = (n: number) => (n === 0 ? "–" : rupiah(n));
+
+  return (
+    <Card id="doc-recap" className="overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4">
+        <div>
+          <h2 className="font-bold text-foreground">Rekapitulasi Pendapatan</h2>
+          <p className="text-xs text-muted-foreground">
+            {periodLabel} · {rows.length} karyawan · komponen gaji → sub total → management fee → PPN/PPh 23 → grand total
+          </p>
+        </div>
+        <div className="flex gap-2 print:hidden">
+          <button className="btn-outline whitespace-nowrap" onClick={exportRecapCsv}>
+            <Download size={16} /> Excel (.csv)
+          </button>
+          <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-recap")}>
+            <IconPrint width={16} height={16} /> Cetak / PDF
+          </button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1600px] text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="th sticky left-0 z-10 bg-muted">Karyawan</th>
+              <th className="th text-center">Hari</th>
+              {RECAP_COLS.map((c) => (
+                <th key={c.key} className={`th text-right ${c.strong ? "text-foreground" : ""}`}>
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {rows.length === 0 && (
+              <tr>
+                <td className="td text-muted-foreground" colSpan={RECAP_COLS.length + 2}>
+                  Tidak ada karyawan untuk filter ini.
+                </td>
+              </tr>
+            )}
+            {rows.map((r) => (
+              <tr key={r.id} className="hover:bg-muted">
+                <td className="td sticky left-0 z-10 bg-card">
+                  <p className="whitespace-nowrap font-semibold text-foreground">{r.name}</p>
+                  <p className="text-xs text-muted-foreground">{r.position}</p>
+                </td>
+                <td className="td text-center text-muted-foreground">{r.days}</td>
+                {RECAP_COLS.map((c) => (
+                  <td
+                    key={c.key}
+                    className={`td whitespace-nowrap text-right ${
+                      c.strong ? "font-semibold text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {money(r[c.key] as number)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+          {rows.length > 0 && (
+            <tfoot>
+              <tr className="border-t-2 border-border bg-muted/60 font-semibold">
+                <td className="td sticky left-0 z-10 bg-muted/60 text-foreground">TOTAL</td>
+                <td className="td"></td>
+                {RECAP_COLS.map((c) => (
+                  <td key={c.key} className="td whitespace-nowrap text-right text-foreground">
+                    {money(totals[c.key as string] ?? 0)}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+      <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+        Rumus mengikuti spreadsheet Rekap BSU-ALS: BPJS TK/JP/Kesehatan dihitung dari <b>Basic Salary</b>;
+        Management Fee = fee% × <b>Upah Masuk</b>; PPN &amp; PPh 23 dihitung dari <b>Management Fee</b>;
+        Grand Total = TOTAL 1 + PPN − PPh 23. Tanda “–” berarti nilai 0 (Basic Salary belum diisi).
+      </p>
+    </Card>
   );
 }

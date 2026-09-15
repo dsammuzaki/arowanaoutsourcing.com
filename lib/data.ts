@@ -313,6 +313,121 @@ export function calcPayroll(emp: Employee, periodSeed = 0, cfg?: PayrollConfig):
   };
 }
 
+// ---------------------------------------------------------------------
+// Rekapitulasi Pendapatan (invoice recap ARMAS) — rumus mengikuti
+// spreadsheet "Rekap BSU-ALS": komponen gaji -> SUB TOTAL -> mgmt fee
+// -> TOTAL 1 -> PPN & PPh23 (atas management fee) -> Grand Total.
+// ---------------------------------------------------------------------
+export interface RecapInput {
+  days: number; // hari kerja (default 21)
+  tambahan: number;
+  kompensasi: number;
+  rapel: number;
+  potKedukaan: number;
+  potKoperasi: number;
+  iph: number; // Izin Potong Upah
+  tunjJabatan: number;
+  tunjKehadiran: number;
+  tunjEquipment: number;
+}
+
+export interface RecapFee {
+  managementFeePct: number; // W = Upah Masuk * fee%
+  ppnPct: number; // atas management fee
+  pph23Pct: number; // atas management fee
+}
+
+export interface RecapLine {
+  employee: Employee;
+  position: string;
+  basicSalary: number; // F — Bacis Salary
+  days: number; // G
+  upahMasuk: number; // H = F/21*days
+  tambahan: number; // I
+  kompensasi: number; // J
+  rapel: number; // K
+  potKedukaan: number; // L
+  potKoperasi: number; // M
+  iph: number; // N
+  tunjJabatan: number; // O
+  tunjKehadiran: number; // P
+  salaryThisMonth: number; // Q = (H+I+J+K) - L - M - N + O + P
+  bpjsTK: number; // R = F * 4.24%
+  jp: number; // S = F * 2%
+  bpjsKes: number; // T = F * 4%
+  tunjEquipment: number; // U
+  subTotal: number; // V = Q+R+S+T+U
+  mgmtFee: number; // W = H * fee%
+  total1: number; // X = V + W
+  ppn: number; // Y = W * ppn%
+  pph23: number; // Z = W * pph23%
+  grandTotal: number; // AA = X + Y - Z
+}
+
+export function calcRecap(
+  emp: Employee,
+  fee?: Partial<RecapFee>,
+  cfg?: PayrollConfig,
+  input?: Partial<RecapInput>
+): RecapLine {
+  const rates = cfg?.bpjsRates ?? bpjsRates;
+  const mgmtPct = fee?.managementFeePct ?? 7;
+  const ppnPct = fee?.ppnPct ?? 12;
+  const pph23Pct = fee?.pph23Pct ?? 2;
+
+  const F = emp.basicSalary; // Bacis Salary 2026
+  const days = input?.days ?? 21;
+  const H = Math.round((F / 21) * days); // Upah Masuk (prorata hari)
+  const I = input?.tambahan ?? 0;
+  const J = input?.kompensasi ?? 0;
+  const K = input?.rapel ?? 0;
+  const L = input?.potKedukaan ?? 0;
+  const M = input?.potKoperasi ?? 0;
+  const N = input?.iph ?? 0;
+  const O = input?.tunjJabatan ?? 0;
+  const P = input?.tunjKehadiran ?? 0;
+  const U = input?.tunjEquipment ?? 0;
+
+  const Q = H + I + J + K - L - M - N + O + P; // Salary This Month
+  const bpjsTKpct = rates.jhtClient + rates.jkkClient + rates.jkmClient; // 4.24%
+  const R = Math.round((F * bpjsTKpct) / 100);
+  const S = Math.round((F * rates.jpClient) / 100);
+  const T = Math.round((F * rates.kesehatanClient) / 100);
+  const V = Q + R + S + T + U; // SUB TOTAL
+  const W = Math.round((H * mgmtPct) / 100); // Management fee
+  const X = V + W; // TOTAL 1
+  const Y = Math.round((W * ppnPct) / 100); // PPN
+  const Z = Math.round((W * pph23Pct) / 100); // PPh23
+  const AA = X + Y - Z; // Grand Total
+
+  return {
+    employee: emp,
+    position: emp.position,
+    basicSalary: F,
+    days,
+    upahMasuk: H,
+    tambahan: I,
+    kompensasi: J,
+    rapel: K,
+    potKedukaan: L,
+    potKoperasi: M,
+    iph: N,
+    tunjJabatan: O,
+    tunjKehadiran: P,
+    salaryThisMonth: Q,
+    bpjsTK: R,
+    jp: S,
+    bpjsKes: T,
+    tunjEquipment: U,
+    subTotal: V,
+    mgmtFee: W,
+    total1: X,
+    ppn: Y,
+    pph23: Z,
+    grandTotal: AA,
+  };
+}
+
 // ---------- Invoice ke klien ----------
 export interface ClientInvoice {
   id: string;
