@@ -43,6 +43,7 @@ async function buildNotifs(role: string): Promise<NotifItem[]> {
 const PAGES: SearchItem[] = [
   { label: "Dashboard", href: "/dashboard", kind: "halaman" },
   { label: "Data Karyawan", href: "/karyawan", kind: "halaman" },
+  { label: "Data Pelanggan", href: "/pelanggan", kind: "halaman" },
   { label: "Absensi", href: "/absensi", kind: "halaman" },
   { label: "Rekrutmen & Onboarding", href: "/rekrutmen", kind: "halaman" },
   { label: "Monitoring Kontrak", href: "/kontrak", kind: "halaman" },

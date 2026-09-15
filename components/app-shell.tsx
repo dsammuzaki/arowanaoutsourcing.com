@@ -37,6 +37,7 @@ import {
   HeartPulse,
   ClipboardCheck,
   History,
+  Building2,
   MessageCircle,
   LogOut,
   Menu,
@@ -61,6 +62,7 @@ const nav: NavSection[] = [
     group: "Operasional",
     items: [
       { href: "/karyawan", label: "Data Karyawan", Icon: Users },
+      { href: "/pelanggan", label: "Data Pelanggan", Icon: Building2, roles: ["super_admin", "operation", "director"] },
       { href: "/absensi", label: "Absensi", Icon: CalendarCheck },
     ],
   },
