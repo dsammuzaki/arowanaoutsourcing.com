@@ -42,22 +42,33 @@ export function ChatWidget({
       {/* Panel pop-up */}
       {open && (
         <div
-          className="fixed right-4 z-50 flex w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl lg:right-6"
-          style={{ bottom: "calc(9.5rem + var(--safe-bottom))", height: "min(70vh, 560px)" }}
+          className="fixed right-3 z-50 flex w-[min(95vw,440px)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl lg:right-6 lg:w-[480px]"
+          style={{ bottom: "calc(9.25rem + var(--safe-bottom))", height: "min(85vh, 680px)" }}
           role="dialog"
           aria-label="Chat Tim"
         >
-          <div className="flex items-center justify-between border-b border-border bg-sidebar px-4 py-3 text-white">
-            <div className="flex items-center gap-2">
-              <MessageCircle size={17} />
-              <span className="text-sm font-bold">Chat Tim</span>
+          <div
+            className="flex items-center justify-between px-4 py-3 text-white"
+            style={{
+              background:
+                "radial-gradient(420px circle at 15% -20%, rgba(26,125,156,.55), transparent 60%), var(--color-sidebar, #0a2029)",
+            }}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                <MessageCircle size={17} />
+              </span>
+              <div className="leading-tight">
+                <p className="text-sm font-bold">Chat Tim</p>
+                <p className="text-[10px] text-teal-soft/80">{members.length} anggota · realtime</p>
+              </div>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1 text-white/70 hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
               aria-label="Tutup"
             >
-              <X size={17} />
+              <X size={18} />
             </button>
           </div>
           <div className="min-h-0 flex-1">
