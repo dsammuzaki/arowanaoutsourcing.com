@@ -3,10 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, Badge, Avatar } from "@/components/ui";
+import { Modal } from "@/components/modal";
 import { IconWallet, IconCheck, IconPrint } from "@/components/icons";
-import { CalendarDays, Users, Building2, Download } from "lucide-react";
+import { CalendarDays, Users, Building2, Download, Pencil } from "lucide-react";
 import { rupiah } from "@/lib/format";
 import { printElementById } from "@/lib/print";
+import { recapValues, type RecapNumbers, type RecapInput } from "@/lib/data";
+import { saveRecapComponent } from "@/app/(app)/payroll/actions";
 
 export type PayrollLineDTO = {
   id: string;
@@ -23,38 +26,38 @@ export type PayrollLineDTO = {
   method: string;
 };
 
-export type RecapLineDTO = {
+// Data dasar per karyawan; komponen & perhitungan dilakukan di client.
+export type RecapBaseDTO = {
   id: string;
   name: string;
   clientId: string;
   clientName: string;
   position: string;
   basicSalary: number;
-  days: number;
-  upahMasuk: number;
-  tambahan: number;
-  kompensasi: number;
-  rapel: number;
-  potKedukaan: number;
-  potKoperasi: number;
-  iph: number;
-  tunjJabatan: number;
-  tunjKehadiran: number;
-  salaryThisMonth: number;
-  bpjsTK: number;
-  jp: number;
-  bpjsKes: number;
-  tunjEquipment: number;
-  subTotal: number;
-  mgmtFee: number;
-  total1: number;
-  ppn: number;
-  pph23: number;
-  grandTotal: number;
+  managementFeePct: number;
+  ppnPct: number;
+  pph23Pct: number;
 };
 
+export type RecapComponentsMap = Record<string, Record<string, Partial<RecapInput>>>;
+type BpjsPct = { tkPct: number; jpPct: number; kesPct: number };
+
+// Komponen yang bisa diedit manual (urutan input di modal)
+const COMP_FIELDS: { key: keyof RecapInput; label: string }[] = [
+  { key: "days", label: "Hari Kerja" },
+  { key: "tambahan", label: "Tambahan" },
+  { key: "kompensasi", label: "Kompensasi" },
+  { key: "rapel", label: "Rapel Gaji" },
+  { key: "potKedukaan", label: "Potongan Kedukaan" },
+  { key: "potKoperasi", label: "Potongan Koperasi" },
+  { key: "iph", label: "IPH / Pot. Perusahaan" },
+  { key: "tunjJabatan", label: "Tunjangan Jabatan" },
+  { key: "tunjKehadiran", label: "Tunjangan Kehadiran" },
+  { key: "tunjEquipment", label: "Tunjangan Equipment" },
+];
+
 // Kolom rekap (urutan sesuai spreadsheet Rekap BSU-ALS)
-const RECAP_COLS: { key: keyof RecapLineDTO; label: string; strong?: boolean }[] = [
+const RECAP_COLS: { key: keyof RecapNumbers; label: string; strong?: boolean }[] = [
   { key: "basicSalary", label: "Basic Salary" },
   { key: "upahMasuk", label: "Upah Masuk" },
   { key: "tambahan", label: "Tambahan" },
@@ -104,11 +107,15 @@ function buildPeriods(year: number) {
 
 export function PayrollClient({
   lines,
-  recap = [],
+  recapBase = [],
+  components = {},
+  bpjs = { tkPct: 4.24, jpPct: 2, kesPct: 4 },
   clients,
 }: {
   lines: PayrollLineDTO[];
-  recap?: RecapLineDTO[];
+  recapBase?: RecapBaseDTO[];
+  components?: RecapComponentsMap;
+  bpjs?: BpjsPct;
   clients: { id: string; name: string }[];
 }) {
   const year = 2026;
@@ -118,10 +125,15 @@ export function PayrollClient({
   const [employeeId, setEmployeeId] = useState("all");
   const [daysWorked, setDaysWorked] = useState<Record<string, number>>({});
   const [view, setView] = useState<"slip" | "rekap">("slip");
+  // Komponen rekap dalam state agar bisa diedit tanpa reload penuh.
+  const [comps, setComps] = useState<RecapComponentsMap>(components);
 
   const [finalized, setFinalized] = useState(false);
   const period = periods.find((p) => p.key === periodKey) ?? periods[7];
   const daysInMonth = period.days;
+  // Periode dalam format "YYYY-MM" (mis. Agustus -> "2026-08") untuk komponen rekap.
+  const monthIndex = Number(periodKey.split("-")[1]);
+  const recapPeriod = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
 
   const filtered = useMemo(
     () =>
@@ -133,14 +145,14 @@ export function PayrollClient({
     [lines, projectId, employeeId]
   );
 
-  const recapFiltered = useMemo(
+  const recapBaseFiltered = useMemo(
     () =>
-      recap.filter(
+      recapBase.filter(
         (l) =>
           (projectId === "all" || l.clientId === projectId) &&
           (employeeId === "all" || l.id === employeeId)
       ),
-    [recap, projectId, employeeId]
+    [recapBase, projectId, employeeId]
   );
 
   // Prorata linier berdasarkan hari kerja / jumlah hari bulan.
@@ -303,7 +315,19 @@ export function PayrollClient({
       </div>
 
       {view === "rekap" ? (
-        <RecapView rows={recapFiltered} periodLabel={period.label} />
+        <RecapView
+          base={recapBaseFiltered}
+          components={comps[recapPeriod] ?? {}}
+          bpjs={bpjs}
+          period={recapPeriod}
+          periodLabel={period.label}
+          onSaved={(empId, input) =>
+            setComps((prev) => ({
+              ...prev,
+              [recapPeriod]: { ...(prev[recapPeriod] ?? {}), [empId]: input },
+            }))
+          }
+        />
       ) : (
       <>
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -410,14 +434,42 @@ export function PayrollClient({
 }
 
 // ---- Rekapitulasi Pendapatan (invoice recap ARMAS) ----
-function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: string }) {
-  const totals = rows.reduce(
-    (acc, r) => {
-      for (const c of RECAP_COLS) acc[c.key as string] = (acc[c.key as string] ?? 0) + (r[c.key] as number);
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+type RecapRow = RecapNumbers & { id: string; name: string; clientName: string };
+
+function RecapView({
+  base,
+  components,
+  bpjs,
+  period,
+  periodLabel,
+  onSaved,
+}: {
+  base: RecapBaseDTO[];
+  components: Record<string, Partial<RecapInput>>;
+  bpjs: BpjsPct;
+  period: string;
+  periodLabel: string;
+  onSaved: (empId: string, input: Partial<RecapInput>) => void;
+}) {
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const rows: RecapRow[] = base.map((b) => ({
+    id: b.id,
+    name: b.name,
+    clientName: b.clientName,
+    ...recapValues(
+      b.basicSalary,
+      b.position,
+      { managementFeePct: b.managementFeePct, ppnPct: b.ppnPct, pph23Pct: b.pph23Pct },
+      bpjs,
+      components[b.id]
+    ),
+  }));
+
+  const totals = rows.reduce((acc, r) => {
+    for (const c of RECAP_COLS) acc[c.key as string] = (acc[c.key as string] ?? 0) + (r[c.key] as number);
+    return acc;
+  }, {} as Record<string, number>);
 
   function exportRecapCsv() {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -432,7 +484,7 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `rekap-pendapatan-${periodLabel.replace(" ", "-").toLowerCase()}.csv`;
+    a.download = `rekap-pendapatan-${period}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -440,6 +492,7 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
   }
 
   const money = (n: number) => (n === 0 ? "–" : rupiah(n));
+  const editRow = base.find((b) => b.id === editId) ?? null;
 
   return (
     <Card id="doc-recap" className="overflow-hidden">
@@ -447,7 +500,7 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
         <div>
           <h2 className="font-bold text-foreground">Rekapitulasi Pendapatan</h2>
           <p className="text-xs text-muted-foreground">
-            {periodLabel} · {rows.length} karyawan · komponen gaji → sub total → management fee → PPN/PPh 23 → grand total
+            Periode {periodLabel} · {rows.length} karyawan · klik <Pencil size={11} className="inline" /> untuk mengisi komponen
           </p>
         </div>
         <div className="flex gap-2 print:hidden">
@@ -460,10 +513,11 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1600px] text-sm">
+        <table className="w-full min-w-[1680px] text-sm">
           <thead className="bg-muted">
             <tr>
               <th className="th sticky left-0 z-10 bg-muted">Karyawan</th>
+              <th className="th text-center print:hidden">Edit</th>
               <th className="th text-center">Hari</th>
               {RECAP_COLS.map((c) => (
                 <th key={c.key} className={`th text-right ${c.strong ? "text-foreground" : ""}`}>
@@ -475,7 +529,7 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
           <tbody className="divide-y divide-border">
             {rows.length === 0 && (
               <tr>
-                <td className="td text-muted-foreground" colSpan={RECAP_COLS.length + 2}>
+                <td className="td text-muted-foreground" colSpan={RECAP_COLS.length + 3}>
                   Tidak ada karyawan untuk filter ini.
                 </td>
               </tr>
@@ -485,6 +539,15 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
                 <td className="td sticky left-0 z-10 bg-card">
                   <p className="whitespace-nowrap font-semibold text-foreground">{r.name}</p>
                   <p className="text-xs text-muted-foreground">{r.position}</p>
+                </td>
+                <td className="td text-center print:hidden">
+                  <button
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
+                    onClick={() => setEditId(r.id)}
+                    aria-label={`Edit komponen ${r.name}`}
+                  >
+                    <Pencil size={15} />
+                  </button>
                 </td>
                 <td className="td text-center text-muted-foreground">{r.days}</td>
                 {RECAP_COLS.map((c) => (
@@ -504,6 +567,7 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
             <tfoot>
               <tr className="border-t-2 border-border bg-muted/60 font-semibold">
                 <td className="td sticky left-0 z-10 bg-muted/60 text-foreground">TOTAL</td>
+                <td className="td print:hidden"></td>
                 <td className="td"></td>
                 {RECAP_COLS.map((c) => (
                   <td key={c.key} className="td whitespace-nowrap text-right text-foreground">
@@ -516,10 +580,92 @@ function RecapView({ rows, periodLabel }: { rows: RecapLineDTO[]; periodLabel: s
         </table>
       </div>
       <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
-        Rumus mengikuti spreadsheet Rekap BSU-ALS: BPJS TK/JP/Kesehatan dihitung dari <b>Basic Salary</b>;
-        Management Fee = fee% × <b>Upah Masuk</b>; PPN &amp; PPh 23 dihitung dari <b>Management Fee</b>;
-        Grand Total = TOTAL 1 + PPN − PPh 23. Tanda “–” berarti nilai 0 (Basic Salary belum diisi).
+        Rumus mengikuti spreadsheet Rekap BSU-ALS: BPJS TK/JP/Kesehatan dari <b>Basic Salary</b>; Management Fee = fee% ×{" "}
+        <b>Upah Masuk</b>; PPN &amp; PPh 23 dari <b>Management Fee</b>; Grand Total = TOTAL 1 + PPN − PPh 23. Tanda “–” = 0.
       </p>
+
+      {editRow && (
+        <EditComponentModal
+          name={editRow.name}
+          periodLabel={periodLabel}
+          initial={components[editRow.id]}
+          onClose={() => setEditId(null)}
+          onSave={async (input) => {
+            const res = await saveRecapComponent(editRow.id, period, input as RecapInput);
+            if (!res.ok) return res.error || "Gagal menyimpan.";
+            onSaved(editRow.id, input);
+            setEditId(null);
+            return null;
+          }}
+        />
+      )}
     </Card>
+  );
+}
+
+function EditComponentModal({
+  name,
+  periodLabel,
+  initial,
+  onClose,
+  onSave,
+}: {
+  name: string;
+  periodLabel: string;
+  initial?: Partial<RecapInput>;
+  onClose: () => void;
+  onSave: (input: Partial<RecapInput>) => Promise<string | null>;
+}) {
+  const [form, setForm] = useState<Record<string, number>>(() => {
+    const f: Record<string, number> = {};
+    for (const c of COMP_FIELDS) f[c.key] = Number(initial?.[c.key] ?? (c.key === "days" ? 21 : 0));
+    return f;
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function submit() {
+    setBusy(true);
+    setErr("");
+    const msg = await onSave(form as Partial<RecapInput>);
+    setBusy(false);
+    if (msg) setErr(msg);
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Komponen Rekap"
+      subtitle={`${name} · ${periodLabel}`}
+      footer={
+        <div className="flex justify-end gap-2">
+          <button className="btn-ghost" onClick={onClose} disabled={busy}>
+            Batal
+          </button>
+          <button className="btn-primary" onClick={submit} disabled={busy}>
+            {busy ? "Menyimpan…" : "Simpan"}
+          </button>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-2 gap-3">
+        {COMP_FIELDS.map((c) => (
+          <div key={c.key}>
+            <label className="label">{c.label}</label>
+            <input
+              type="number"
+              className="input"
+              value={form[c.key]}
+              onChange={(e) => setForm((f) => ({ ...f, [c.key]: e.target.value === "" ? 0 : Number(e.target.value) }))}
+            />
+          </div>
+        ))}
+      </div>
+      {err && <p className="mt-3 text-sm text-brand-red">{err}</p>}
+      <p className="mt-3 text-xs text-muted-foreground">
+        Nilai ini dipakai menghitung Salary This Month, SUB TOTAL, hingga Grand Total untuk periode {periodLabel}.
+      </p>
+    </Modal>
   );
 }

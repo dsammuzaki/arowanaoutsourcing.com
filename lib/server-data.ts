@@ -120,3 +120,39 @@ export async function getRecapComponents(period: string): Promise<Record<string,
   }
   return out;
 }
+
+function mapRecapInput(r: Row): Partial<RecapInput> {
+  return {
+    days: (r.days as number) ?? 21,
+    tambahan: Number(r.tambahan) || 0,
+    kompensasi: Number(r.kompensasi) || 0,
+    rapel: Number(r.rapel) || 0,
+    potKedukaan: Number(r.pot_kedukaan) || 0,
+    potKoperasi: Number(r.pot_koperasi) || 0,
+    iph: Number(r.iph) || 0,
+    tunjJabatan: Number(r.tunj_jabatan) || 0,
+    tunjKehadiran: Number(r.tunj_kehadiran) || 0,
+    tunjEquipment: Number(r.tunj_equipment) || 0,
+  };
+}
+
+/**
+ * Semua komponen rekap, dikelompokkan per periode → per karyawan.
+ * { "2026-08": { "arm-1226": {...} }, ... }
+ */
+export async function getAllRecapComponents(): Promise<Record<string, Record<string, Partial<RecapInput>>>> {
+  const out: Record<string, Record<string, Partial<RecapInput>>> = {};
+  if (isSupabaseConfigured()) {
+    try {
+      const sb = createClient(await cookies());
+      const { data } = await sb.from("recap_components").select("*");
+      for (const r of (data ?? []) as Row[]) {
+        const period = String(r.period);
+        (out[period] ??= {})[String(r.employee_id)] = mapRecapInput(r);
+      }
+    } catch {
+      /* tabel mungkin belum dibuat */
+    }
+  }
+  return out;
+}

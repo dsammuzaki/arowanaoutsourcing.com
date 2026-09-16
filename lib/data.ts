@@ -364,18 +364,17 @@ export interface RecapLine {
   grandTotal: number; // AA = X + Y - Z
 }
 
-export function calcRecap(
-  emp: Employee,
-  fee?: Partial<RecapFee>,
-  cfg?: PayrollConfig,
-  input?: Partial<RecapInput>
-): RecapLine {
-  const rates = cfg?.bpjsRates ?? bpjsRates;
-  const mgmtPct = fee?.managementFeePct ?? 7;
-  const ppnPct = fee?.ppnPct ?? 12;
-  const pph23Pct = fee?.pph23Pct ?? 2;
+export type RecapNumbers = Omit<RecapLine, "employee">;
 
-  const F = emp.basicSalary; // Bacis Salary 2026
+// Perhitungan murni (dipakai server & client). `bpjs` dalam persen.
+export function recapValues(
+  basicSalary: number,
+  position: string,
+  fee: RecapFee,
+  bpjs: { tkPct: number; jpPct: number; kesPct: number },
+  input?: Partial<RecapInput>
+): RecapNumbers {
+  const F = basicSalary;
   const days = input?.days ?? 21;
   const H = Math.round((F / 21) * days); // Upah Masuk (prorata hari)
   const I = input?.tambahan ?? 0;
@@ -389,20 +388,18 @@ export function calcRecap(
   const U = input?.tunjEquipment ?? 0;
 
   const Q = H + I + J + K - L - M - N + O + P; // Salary This Month
-  const bpjsTKpct = rates.jhtClient + rates.jkkClient + rates.jkmClient; // 4.24%
-  const R = Math.round((F * bpjsTKpct) / 100);
-  const S = Math.round((F * rates.jpClient) / 100);
-  const T = Math.round((F * rates.kesehatanClient) / 100);
+  const R = Math.round((F * bpjs.tkPct) / 100);
+  const S = Math.round((F * bpjs.jpPct) / 100);
+  const T = Math.round((F * bpjs.kesPct) / 100);
   const V = Q + R + S + T + U; // SUB TOTAL
-  const W = Math.round((H * mgmtPct) / 100); // Management fee
+  const W = Math.round((H * fee.managementFeePct) / 100); // Management fee
   const X = V + W; // TOTAL 1
-  const Y = Math.round((W * ppnPct) / 100); // PPN
-  const Z = Math.round((W * pph23Pct) / 100); // PPh23
+  const Y = Math.round((W * fee.ppnPct) / 100); // PPN
+  const Z = Math.round((W * fee.pph23Pct) / 100); // PPh23
   const AA = X + Y - Z; // Grand Total
 
   return {
-    employee: emp,
-    position: emp.position,
+    position,
     basicSalary: F,
     days,
     upahMasuk: H,
@@ -426,6 +423,26 @@ export function calcRecap(
     pph23: Z,
     grandTotal: AA,
   };
+}
+
+// Persentase BPJS sisi klien (tagihan) dari konfigurasi.
+export function bpjsClientPct(cfg?: PayrollConfig): { tkPct: number; jpPct: number; kesPct: number } {
+  const r = cfg?.bpjsRates ?? bpjsRates;
+  return { tkPct: r.jhtClient + r.jkkClient + r.jkmClient, jpPct: r.jpClient, kesPct: r.kesehatanClient };
+}
+
+export function calcRecap(
+  emp: Employee,
+  fee?: Partial<RecapFee>,
+  cfg?: PayrollConfig,
+  input?: Partial<RecapInput>
+): RecapLine {
+  const f: RecapFee = {
+    managementFeePct: fee?.managementFeePct ?? 7,
+    ppnPct: fee?.ppnPct ?? 12,
+    pph23Pct: fee?.pph23Pct ?? 2,
+  };
+  return { employee: emp, ...recapValues(emp.basicSalary, emp.position, f, bpjsClientPct(cfg), input) };
 }
 
 // ---------- Invoice ke klien ----------
