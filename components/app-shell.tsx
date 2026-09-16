@@ -361,7 +361,7 @@ export function AppShell({
           <PageTransition>{children}</PageTransition>
         </main>
         <footer className="border-t border-border bg-card/60 px-4 py-4 sm:px-6 lg:px-8 lg:pb-[calc(1rem+var(--safe-bottom))]">
-          <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
+          <div className="flex w-full flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
             <div className="flex items-center gap-2">
               <Logo size={22} />
               <span className="text-xs text-muted-foreground">
