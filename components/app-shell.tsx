@@ -188,9 +188,13 @@ function SidebarInner({
             <span className="absolute -inset-2 rounded-full bg-teal/25 blur-lg" />
             <Logo size={40} className="relative" />
           </div>
-          <div className="leading-tight">
-            <p className="text-[13px] font-bold leading-tight text-white">Barata Sakti Utama</p>
-            <p className="text-[11px] font-medium tracking-wide text-teal-soft/80">Outsourcing System</p>
+          <div className="min-w-0 leading-tight">
+            <p className="whitespace-nowrap text-[12px] font-bold leading-tight tracking-tight text-white">
+              Barata Sakti Utama
+            </p>
+            <p className="whitespace-nowrap text-[10px] font-medium tracking-wide text-teal-soft/80">
+              Outsourcing System
+            </p>
           </div>
         </div>
         <div className="mx-4 mb-1 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
