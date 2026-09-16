@@ -70,3 +70,45 @@ export async function saveRecapComponent(
   revalidatePath("/payroll");
   return { ok: true };
 }
+
+export type RecapBulkItem = { employeeId: string } & RecapComponentInput;
+
+// Impor/ubah banyak komponen sekaligus (upsert) untuk satu periode.
+export async function saveRecapComponentsBulk(
+  period: string,
+  items: RecapBulkItem[]
+): Promise<{ ok: boolean; error?: string; count?: number }> {
+  const g = await gate();
+  if (!g.ok) return g;
+  if (!/^\d{4}-\d{2}$/.test(period)) return { ok: false, error: "Periode tidak valid." };
+  if (!Array.isArray(items) || items.length === 0) return { ok: false, error: "Tidak ada data untuk diimpor." };
+  if (items.length > 2000) return { ok: false, error: "Terlalu banyak baris (maks 2000)." };
+
+  const n = (v: unknown) => {
+    const x = Number(v);
+    return Number.isFinite(x) ? x : 0;
+  };
+  const rows = items
+    .filter((it) => it.employeeId)
+    .map((it) => ({
+      employee_id: it.employeeId,
+      period,
+      days: Math.max(0, Math.min(31, Math.round(n(it.days)))),
+      tambahan: n(it.tambahan),
+      kompensasi: n(it.kompensasi),
+      rapel: n(it.rapel),
+      pot_kedukaan: n(it.potKedukaan),
+      pot_koperasi: n(it.potKoperasi),
+      iph: n(it.iph),
+      tunj_jabatan: n(it.tunjJabatan),
+      tunj_kehadiran: n(it.tunjKehadiran),
+      tunj_equipment: n(it.tunjEquipment),
+    }));
+  if (rows.length === 0) return { ok: false, error: "Tidak ada baris valid (kolom id kosong?)." };
+
+  const { error } = await g.admin.from("recap_components").upsert(rows, { onConflict: "employee_id,period" });
+  if (error) return { ok: false, error: error.message };
+  await logAudit("import_recap_components", period, `Impor ${rows.length} komponen rekap periode ${period}`);
+  revalidatePath("/payroll");
+  return { ok: true, count: rows.length };
+}

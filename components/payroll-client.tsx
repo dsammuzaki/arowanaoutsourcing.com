@@ -1,15 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { Modal } from "@/components/modal";
 import { IconWallet, IconCheck, IconPrint } from "@/components/icons";
-import { CalendarDays, Users, Building2, Download, Pencil } from "lucide-react";
+import { CalendarDays, Users, Building2, Download, Pencil, Upload } from "lucide-react";
 import { rupiah } from "@/lib/format";
 import { printElementById } from "@/lib/print";
 import { recapValues, type RecapNumbers, type RecapInput } from "@/lib/data";
-import { saveRecapComponent } from "@/app/(app)/payroll/actions";
+import {
+  saveRecapComponent,
+  saveRecapComponentsBulk,
+  type RecapBulkItem,
+  type RecapComponentInput,
+} from "@/app/(app)/payroll/actions";
 
 export type PayrollLineDTO = {
   id: string;
@@ -327,6 +332,12 @@ export function PayrollClient({
               [recapPeriod]: { ...(prev[recapPeriod] ?? {}), [empId]: input },
             }))
           }
+          onBulkSaved={(map) =>
+            setComps((prev) => ({
+              ...prev,
+              [recapPeriod]: { ...(prev[recapPeriod] ?? {}), ...map },
+            }))
+          }
         />
       ) : (
       <>
@@ -443,6 +454,7 @@ function RecapView({
   period,
   periodLabel,
   onSaved,
+  onBulkSaved,
 }: {
   base: RecapBaseDTO[];
   components: Record<string, Partial<RecapInput>>;
@@ -450,8 +462,11 @@ function RecapView({
   period: string;
   periodLabel: string;
   onSaved: (empId: string, input: Partial<RecapInput>) => void;
+  onBulkSaved: (map: Record<string, Partial<RecapInput>>) => void;
 }) {
   const [editId, setEditId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const rows: RecapRow[] = base.map((b) => ({
     id: b.id,
@@ -494,6 +509,121 @@ function RecapView({
   const money = (n: number) => (n === 0 ? "–" : rupiah(n));
   const editRow = base.find((b) => b.id === editId) ?? null;
 
+  // ---- Import / Export data mentah (komponen) ----
+  const RAW_COLS = [
+    "hari_kerja",
+    "tambahan",
+    "kompensasi",
+    "rapel",
+    "pot_kedukaan",
+    "pot_koperasi",
+    "iph_pot_perusahaan",
+    "tunj_jabatan",
+    "tunj_kehadiran",
+    "tunj_equipment",
+  ]; // urutannya sama dengan COMP_FIELDS
+
+  const compOf = (id: string): Record<string, number> => {
+    const c = components[id] ?? {};
+    const o: Record<string, number> = {};
+    for (const f of COMP_FIELDS) o[f.key] = Number(c[f.key] ?? (f.key === "days" ? 21 : 0));
+    return o;
+  };
+
+  function download(name: string, csv: string) {
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportRawCsv() {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const head = ["id", "nama", "jabatan", ...RAW_COLS];
+    const body = base.map((b) => {
+      const cc = compOf(b.id);
+      return [b.id, b.name, b.position, ...COMP_FIELDS.map((f) => cc[f.key])].map(esc).join(",");
+    });
+    download(`komponen-rekap-${period}.csv`, [head.map(esc).join(","), ...body].join("\n"));
+  }
+
+  function parseCsv(text: string): string[][] {
+    const out: string[][] = [];
+    let row: string[] = [];
+    let cell = "";
+    let q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"') {
+          if (text[i + 1] === '"') { cell += '"'; i++; } else q = false;
+        } else cell += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === ",") { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        row.push(cell); out.push(row); row = []; cell = "";
+      } else cell += ch;
+    }
+    if (cell !== "" || row.length) { row.push(cell); out.push(row); }
+    return out;
+  }
+
+  async function handleImportFile(file: File) {
+    setImporting(true);
+    try {
+      const text = (await file.text()).replace(/^﻿/, "");
+      const grid = parseCsv(text).filter((r) => r.some((x) => x.trim() !== ""));
+      if (grid.length < 2) { alert("File tidak berisi data."); return; }
+      const header = grid[0].map((h) => h.trim().toLowerCase());
+      const idIdx = header.indexOf("id") >= 0 ? header.indexOf("id") : 0;
+      const num = (v: unknown) => {
+        const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
+        return Number.isFinite(n) ? n : 0;
+      };
+      const items: RecapBulkItem[] = [];
+      const map: Record<string, Partial<RecapInput>> = {};
+      for (const r of grid.slice(1)) {
+        const id = (r[idIdx] ?? "").trim();
+        if (!id) continue;
+        const input: RecapComponentInput = {
+          days: 21,
+          tambahan: 0,
+          kompensasi: 0,
+          rapel: 0,
+          potKedukaan: 0,
+          potKoperasi: 0,
+          iph: 0,
+          tunjJabatan: 0,
+          tunjKehadiran: 0,
+          tunjEquipment: 0,
+        };
+        COMP_FIELDS.forEach((f, i) => {
+          const byName = header.indexOf(RAW_COLS[i]);
+          const col = byName >= 0 ? byName : 3 + i;
+          (input as Record<string, number>)[f.key] = num(r[col]);
+        });
+        items.push({ employeeId: id, ...input });
+        map[id] = { ...input };
+      }
+      if (!items.length) { alert("Tidak ada baris valid (kolom id kosong?)."); return; }
+      const res = await saveRecapComponentsBulk(period, items);
+      if (!res.ok) { alert(res.error || "Gagal mengimpor."); return; }
+      onBulkSaved(map);
+      alert(`Impor berhasil: ${res.count} baris komponen untuk periode ${periodLabel}.`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Gagal membaca file.");
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   return (
     <Card id="doc-recap" className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4">
@@ -503,9 +633,30 @@ function RecapView({
             Periode {periodLabel} · {rows.length} karyawan · klik <Pencil size={11} className="inline" /> untuk mengisi komponen
           </p>
         </div>
-        <div className="flex gap-2 print:hidden">
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleImportFile(f);
+            }}
+          />
+          <button
+            className="btn-outline whitespace-nowrap"
+            onClick={() => fileRef.current?.click()}
+            disabled={importing}
+            title="Impor komponen dari CSV (format sama dengan Ekspor Mentah)"
+          >
+            <Upload size={16} /> {importing ? "Mengimpor…" : "Import"}
+          </button>
+          <button className="btn-outline whitespace-nowrap" onClick={exportRawCsv} title="Ekspor data mentah (komponen) untuk diedit di Excel lalu diimpor kembali">
+            <Download size={16} /> Data Mentah
+          </button>
           <button className="btn-outline whitespace-nowrap" onClick={exportRecapCsv}>
-            <Download size={16} /> Excel (.csv)
+            <Download size={16} /> Rekap (.csv)
           </button>
           <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-recap")}>
             <IconPrint width={16} height={16} /> Cetak / PDF
@@ -517,13 +668,13 @@ function RecapView({
           <thead className="bg-muted">
             <tr>
               <th className="th sticky left-0 z-10 bg-muted">Karyawan</th>
-              <th className="th text-center print:hidden">Edit</th>
               <th className="th text-center">Hari</th>
               {RECAP_COLS.map((c) => (
                 <th key={c.key} className={`th text-right ${c.strong ? "text-foreground" : ""}`}>
                   {c.label}
                 </th>
               ))}
+              <th className="th text-center print:hidden">Edit</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -540,15 +691,6 @@ function RecapView({
                   <p className="whitespace-nowrap font-semibold text-foreground">{r.name}</p>
                   <p className="text-xs text-muted-foreground">{r.position}</p>
                 </td>
-                <td className="td text-center print:hidden">
-                  <button
-                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
-                    onClick={() => setEditId(r.id)}
-                    aria-label={`Edit komponen ${r.name}`}
-                  >
-                    <Pencil size={15} />
-                  </button>
-                </td>
                 <td className="td text-center text-muted-foreground">{r.days}</td>
                 {RECAP_COLS.map((c) => (
                   <td
@@ -560,6 +702,15 @@ function RecapView({
                     {money(r[c.key] as number)}
                   </td>
                 ))}
+                <td className="td text-center print:hidden">
+                  <button
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
+                    onClick={() => setEditId(r.id)}
+                    aria-label={`Edit komponen ${r.name}`}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -567,13 +718,13 @@ function RecapView({
             <tfoot>
               <tr className="border-t-2 border-border bg-muted/60 font-semibold">
                 <td className="td sticky left-0 z-10 bg-muted/60 text-foreground">TOTAL</td>
-                <td className="td print:hidden"></td>
                 <td className="td"></td>
                 {RECAP_COLS.map((c) => (
                   <td key={c.key} className="td whitespace-nowrap text-right text-foreground">
                     {money(totals[c.key as string] ?? 0)}
                   </td>
                 ))}
+                <td className="td print:hidden"></td>
               </tr>
             </tfoot>
           )}
