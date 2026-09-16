@@ -548,8 +548,8 @@ function RecapView({
   const money = (n: number) => (n === 0 ? "–" : rupiah(n));
   const editRow = base.find((b) => b.id === editId) ?? null;
 
-  function download(name: string, csv: string) {
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  function download(name: string, text: string) {
+    const blob = new Blob(["﻿" + text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -560,9 +560,9 @@ function RecapView({
     URL.revokeObjectURL(url);
   }
 
-  // Export satu tabel sesuai TEMPLATE (identitas + komponen + hasil hitung).
+  // Export satu tabel sesuai TEMPLATE ke .txt (dipisah TAB).
   function exportTemplate() {
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const cell = (v: unknown) => String(v ?? "").replace(/[\t\r\n]+/g, " ");
     const head = TEMPLATE.map((t) => t.h);
     const body = rows.map((r, idx) => {
       const b = base[idx];
@@ -574,20 +574,20 @@ function RecapView({
         if (t.meta === "position") return b.position;
         return t.key ? (r[t.key] as number) : "";
       })
-        .map(esc)
-        .join(",");
+        .map(cell)
+        .join("\t");
     });
     const foot = TEMPLATE.map((t) => {
       if (t.meta === "nik") return "TOTAL";
       if (t.meta) return "";
       return t.key ? rows.reduce((s, rr) => s + (rr[t.key!] as number), 0) : "";
     })
-      .map(esc)
-      .join(",");
-    download(`rekap-pendapatan-${period}.csv`, [head.map(esc).join(","), ...body, foot].join("\n"));
+      .map(cell)
+      .join("\t");
+    download(`rekap-pendapatan-${period}.txt`, [head.map(cell).join("\t"), ...body, foot].join("\r\n"));
   }
 
-  function parseCsv(text: string): string[][] {
+  function parseDelimited(text: string, delim: string): string[][] {
     const out: string[][] = [];
     let row: string[] = [];
     let cell = "";
@@ -599,7 +599,7 @@ function RecapView({
           if (text[i + 1] === '"') { cell += '"'; i++; } else q = false;
         } else cell += ch;
       } else if (ch === '"') q = true;
-      else if (ch === ",") { row.push(cell); cell = ""; }
+      else if (ch === delim) { row.push(cell); cell = ""; }
       else if (ch === "\n" || ch === "\r") {
         if (ch === "\r" && text[i + 1] === "\n") i++;
         row.push(cell); out.push(row); row = []; cell = "";
@@ -613,7 +613,9 @@ function RecapView({
   async function handleImportFile(file: File) {
     try {
       const text = (await file.text()).replace(/^﻿/, "");
-      const grid = parseCsv(text).filter((r) => r.some((x) => x.trim() !== ""));
+      const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
+      const delim = firstLine.includes("\t") ? "\t" : ","; // .txt(TAB) atau .csv(koma)
+      const grid = parseDelimited(text, delim).filter((r) => r.some((x) => x.trim() !== ""));
       if (grid.length < 2) {
         alert("File tidak berisi data.");
         return;
@@ -691,7 +693,7 @@ function RecapView({
           <input
             ref={fileRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".txt,.csv,text/plain,text/csv"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -708,9 +710,9 @@ function RecapView({
           <button
             className="btn-outline whitespace-nowrap"
             onClick={exportTemplate}
-            title="Ekspor satu tabel format Template — edit di Excel lalu Import kembali"
+            title="Ekspor satu tabel format Template ke .txt (dipisah TAB) — edit lalu Import kembali"
           >
-            <Download size={16} /> Export (Excel)
+            <Download size={16} /> Export (.txt)
           </button>
           <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-recap")}>
             <IconPrint width={16} height={16} /> Cetak / PDF
