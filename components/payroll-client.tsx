@@ -612,10 +612,23 @@ function RecapView({
   // Parse + validasi (cocokkan NIK) → tampilkan pratinjau (belum menyimpan).
   async function handleImportFile(file: File) {
     try {
-      const text = (await file.text()).replace(/^﻿/, "");
-      const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
-      const delim = firstLine.includes("\t") ? "\t" : ","; // .txt(TAB) atau .csv(koma)
-      const grid = parseDelimited(text, delim).filter((r) => r.some((x) => x.trim() !== ""));
+      let raw: unknown[][];
+      if (/\.xlsx?$/i.test(file.name)) {
+        // Excel (.xlsx / .xls) — parse dengan SheetJS
+        const XLSX = await import("xlsx");
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        raw = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, raw: false, defval: "" }) as unknown[][];
+      } else {
+        // .txt (TAB) atau .csv (koma)
+        const text = (await file.text()).replace(/^﻿/, "");
+        const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
+        const delim = firstLine.includes("\t") ? "\t" : ",";
+        raw = parseDelimited(text, delim);
+      }
+      const grid: string[][] = raw
+        .map((r) => r.map((c) => String(c ?? "")))
+        .filter((r) => r.some((x) => x.trim() !== ""));
       if (grid.length < 2) {
         alert("File tidak berisi data.");
         return;
@@ -693,7 +706,7 @@ function RecapView({
           <input
             ref={fileRef}
             type="file"
-            accept=".txt,.csv,text/plain,text/csv"
+            accept=".xlsx,.xls,.txt,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -703,7 +716,7 @@ function RecapView({
           <button
             className="btn-outline whitespace-nowrap"
             onClick={() => fileRef.current?.click()}
-            title="Impor dari file format Template (dicocokkan berdasarkan NIK)"
+            title="Impor dari Excel (.xlsx), .txt, atau .csv format Template (dicocokkan berdasarkan NIK)"
           >
             <Upload size={16} /> Import
           </button>
