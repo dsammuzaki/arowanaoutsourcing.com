@@ -548,23 +548,10 @@ function RecapView({
   const money = (n: number) => (n === 0 ? "–" : rupiah(n));
   const editRow = base.find((b) => b.id === editId) ?? null;
 
-  function download(name: string, text: string) {
-    const blob = new Blob(["﻿" + text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  // Export satu tabel sesuai TEMPLATE ke .txt (dipisah TAB).
-  function exportTemplate() {
-    const cell = (v: unknown) => String(v ?? "").replace(/[\t\r\n]+/g, " ");
-    const head = TEMPLATE.map((t) => t.h);
-    const body = rows.map((r, idx) => {
+  // Export satu tabel Excel (.xlsx) — format sama persis dengan yang diterima Import.
+  async function exportTemplate() {
+    const XLSX = await import("xlsx");
+    const rowFor = (r: RecapRow, idx: number): (string | number)[] => {
       const b = base[idx];
       return TEMPLATE.map((t) => {
         if (t.meta === "no") return idx + 1;
@@ -573,18 +560,19 @@ function RecapView({
         if (t.meta === "joinDate") return b.joinDate;
         if (t.meta === "position") return b.position;
         return t.key ? (r[t.key] as number) : "";
-      })
-        .map(cell)
-        .join("\t");
-    });
+      });
+    };
+    const head = TEMPLATE.map((t) => t.h);
     const foot = TEMPLATE.map((t) => {
       if (t.meta === "nik") return "TOTAL";
       if (t.meta) return "";
       return t.key ? rows.reduce((s, rr) => s + (rr[t.key!] as number), 0) : "";
-    })
-      .map(cell)
-      .join("\t");
-    download(`rekap-pendapatan-${period}.txt`, [head.map(cell).join("\t"), ...body, foot].join("\r\n"));
+    });
+    const aoa: (string | number)[][] = [head, ...rows.map(rowFor), foot];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap");
+    XLSX.writeFile(wb, `rekap-pendapatan-${period}.xlsx`);
   }
 
   function parseDelimited(text: string, delim: string): string[][] {
@@ -723,9 +711,9 @@ function RecapView({
           <button
             className="btn-outline whitespace-nowrap"
             onClick={exportTemplate}
-            title="Ekspor satu tabel format Template ke .txt (dipisah TAB) — edit lalu Import kembali"
+            title="Ekspor satu tabel Excel (.xlsx) format Template — edit lalu Import kembali"
           >
-            <Download size={16} /> Export (.txt)
+            <Download size={16} /> Export (Excel)
           </button>
           <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-recap")}>
             <IconPrint width={16} height={16} /> Cetak / PDF
