@@ -45,7 +45,7 @@ export default async function SlipPage({
         </div>
       </div>
 
-      <Card id="doc-slip" className="mx-auto max-w-3xl overflow-hidden">
+      <Card id="doc-slip" className="mx-auto flex max-w-3xl flex-col overflow-hidden print:min-h-[247mm]">
         {/* Slip header */}
         <div className="flex items-start justify-between gap-4 border-b border-border bg-navy p-6 text-white">
           <div className="flex items-center gap-3">
@@ -155,6 +155,34 @@ export default async function SlipPage({
             </p>
           </div>
           <p className="text-2xl font-bold text-foreground">{rupiah(l.takeHome)}</p>
+        </div>
+
+        {/* Tanda tangan */}
+        <div className="mt-auto px-6 pb-8 pt-10">
+          <p className="mb-8 text-right text-xs text-muted-foreground">Bekasi, 31 Agustus 2026</p>
+          <div className="grid grid-cols-3 gap-6 text-center text-xs">
+            <div>
+              <p className="text-muted-foreground">Dibuat oleh,</p>
+              <div className="h-16" />
+              <p className="mx-auto w-40 max-w-full border-t border-foreground/60 pt-1 font-semibold text-foreground">
+                Finance
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Disetujui oleh,</p>
+              <div className="h-16" />
+              <p className="mx-auto w-40 max-w-full border-t border-foreground/60 pt-1 font-semibold text-foreground">
+                Direktur
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Diterima oleh,</p>
+              <div className="h-16" />
+              <p className="mx-auto w-40 max-w-full border-t border-foreground/60 pt-1 font-semibold text-foreground">
+                {emp.name}
+              </p>
+            </div>
+          </div>
         </div>
       </Card>
     </>

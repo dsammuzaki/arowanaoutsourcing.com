@@ -87,12 +87,33 @@ async function buildSearchIndex(): Promise<SearchItem[]> {
   return [...PAGES, ...empItems, ...clientItems, ...invoiceItems];
 }
 
+async function buildChat(
+  userId: string,
+  userName: string
+): Promise<{ me: { id: string; name: string }; members: { id: string; name: string; role: string }[]; dbReady: boolean }> {
+  const out = { me: { id: userId, name: userName }, members: [] as { id: string; name: string; role: string }[], dbReady: true };
+  if (!isSupabaseConfigured()) return out;
+  try {
+    const sb = createClient(await cookies());
+    const { data: profs } = await sb.from("profiles").select("id, full_name, role").order("full_name");
+    out.members = (profs ?? [])
+      .filter((p) => p.id !== userId)
+      .map((p) => ({ id: p.id as string, name: (p.full_name as string) || "(tanpa nama)", role: (p.role as string) ?? "" }));
+    const { error } = await sb.from("messages").select("id", { head: true, count: "exact" }).limit(1);
+    if (error && /schema cache|does not exist|PGRST205/i.test(error.message)) out.dbReady = false;
+  } catch {
+    /* abaikan */
+  }
+  return out;
+}
+
 export default async function AppGroupLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   let user: ShellUser = null;
+  let meId = "";
 
   if (isSupabaseConfigured()) {
     const supabase = createClient(await cookies());
@@ -102,6 +123,7 @@ export default async function AppGroupLayout({
 
     // Belum login -> ke halaman login
     if (!authUser) redirect("/");
+    meId = authUser.id;
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -137,9 +159,10 @@ export default async function AppGroupLayout({
 
   const searchIndex = await buildSearchIndex();
   const notifs = user ? await buildNotifs(user.role) : [];
+  const chat = user && meId ? await buildChat(meId, user.name) : undefined;
 
   return (
-    <AppShell user={user} searchIndex={searchIndex} notifs={notifs}>
+    <AppShell user={user} searchIndex={searchIndex} notifs={notifs} chat={chat}>
       {children}
     </AppShell>
   );

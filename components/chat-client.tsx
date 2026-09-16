@@ -22,7 +22,15 @@ function fmt(iso: string) {
   return new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-export function ChatClient({ me, members }: { me: { id: string; name: string }; members: Member[] }) {
+export function ChatClient({
+  me,
+  members,
+  compact = false,
+}: {
+  me: { id: string; name: string };
+  members: Member[];
+  compact?: boolean;
+}) {
   const [active, setActive] = useState<Member | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [text, setText] = useState("");
@@ -100,7 +108,11 @@ export function ChatClient({ me, members }: { me: { id: string; name: string }; 
   }
 
   return (
-    <Card className="grid h-[calc(100vh-13rem)] min-h-[26rem] grid-cols-1 overflow-hidden md:grid-cols-[19rem_1fr]">
+    <Card
+      className={`grid grid-cols-1 overflow-hidden md:grid-cols-[19rem_1fr] ${
+        compact ? "h-full rounded-none border-0 shadow-none" : "h-[calc(100vh-13rem)] min-h-[26rem]"
+      }`}
+    >
       {/* Daftar anggota */}
       <div className={`flex flex-col border-r border-border ${active ? "hidden md:flex" : "flex"}`}>
         <div className="border-b border-border p-3">

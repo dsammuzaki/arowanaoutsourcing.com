@@ -11,6 +11,8 @@ import { NotificationsBell, type NotifItem } from "./notifications-bell";
 import { GlobalSearch, type SearchItem } from "./global-search";
 import { UserMenu } from "./user-menu";
 import { PageTransition } from "./page-transition";
+import { ChatWidget } from "./chat-widget";
+import type { Member as ChatMember } from "./chat-client";
 
 export type ShellUser = { email: string; name: string; role: string } | null;
 
@@ -38,7 +40,6 @@ import {
   ClipboardCheck,
   History,
   Building2,
-  MessageCircle,
   LogOut,
   Menu,
   X,
@@ -53,10 +54,7 @@ type NavSection = { group: string; items: NavItem[] };
 const nav: NavSection[] = [
   {
     group: "Utama",
-    items: [
-      { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-      { href: "/chat", label: "Chat Tim", Icon: MessageCircle },
-    ],
+    items: [{ href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard }],
   },
   {
     group: "Operasional",
@@ -223,7 +221,7 @@ function SidebarInner({
 }
 
 // ---- Dock navigasi bawah (mobile) — pola aplikasi native ----
-const DOCK_ORDER = ["/dashboard", "/chat", "/proyek", "/karyawan", "/absensi", "/payroll"];
+const DOCK_ORDER = ["/dashboard", "/proyek", "/karyawan", "/absensi", "/payroll", "/kontrak"];
 
 function MobileDock({ role, onOpenMenu }: { role?: string; onOpenMenu: () => void }) {
   const pathname = usePathname();
@@ -299,11 +297,13 @@ export function AppShell({
   user,
   searchIndex = [],
   notifs = [],
+  chat,
 }: {
   children: React.ReactNode;
   user?: ShellUser;
   searchIndex?: SearchItem[];
   notifs?: NotifItem[];
+  chat?: { me: { id: string; name: string }; members: ChatMember[]; dbReady: boolean };
 }) {
   const [open, setOpen] = useState(false);
 
@@ -374,6 +374,8 @@ export function AppShell({
       </div>
 
       <MobileDock role={user?.role} onOpenMenu={() => setOpen(true)} />
+
+      {chat && <ChatWidget me={chat.me} members={chat.members} dbReady={chat.dbReady} />}
 
       <OnboardingQuest />
     </div>
