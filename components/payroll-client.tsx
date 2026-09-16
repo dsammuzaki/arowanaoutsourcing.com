@@ -322,6 +322,7 @@ export function PayrollClient({
       {view === "rekap" ? (
         <RecapView
           base={recapBaseFiltered}
+          allBase={recapBase}
           components={comps[recapPeriod] ?? {}}
           bpjs={bpjs}
           period={recapPeriod}
@@ -447,8 +448,19 @@ export function PayrollClient({
 // ---- Rekapitulasi Pendapatan (invoice recap ARMAS) ----
 type RecapRow = RecapNumbers & { id: string; name: string; clientName: string };
 
+type ImportPreview = {
+  fileName: string;
+  total: number;
+  valid: RecapBulkItem[];
+  validMap: Record<string, Partial<RecapInput>>;
+  validNames: string[];
+  unknown: string[];
+  noId: number;
+};
+
 function RecapView({
   base,
+  allBase,
   components,
   bpjs,
   period,
@@ -457,6 +469,7 @@ function RecapView({
   onBulkSaved,
 }: {
   base: RecapBaseDTO[];
+  allBase: RecapBaseDTO[];
   components: Record<string, Partial<RecapInput>>;
   bpjs: BpjsPct;
   period: string;
@@ -466,7 +479,9 @@ function RecapView({
 }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const nameById = useMemo(() => Object.fromEntries(allBase.map((b) => [b.id, b.name])), [allBase]);
 
   const rows: RecapRow[] = base.map((b) => ({
     id: b.id,
@@ -574,54 +589,64 @@ function RecapView({
     return out;
   }
 
+  // Parse + validasi → tampilkan pratinjau (belum menyimpan).
   async function handleImportFile(file: File) {
-    setImporting(true);
     try {
       const text = (await file.text()).replace(/^﻿/, "");
       const grid = parseCsv(text).filter((r) => r.some((x) => x.trim() !== ""));
-      if (grid.length < 2) { alert("File tidak berisi data."); return; }
+      if (grid.length < 2) {
+        alert("File tidak berisi data.");
+        return;
+      }
       const header = grid[0].map((h) => h.trim().toLowerCase());
       const idIdx = header.indexOf("id") >= 0 ? header.indexOf("id") : 0;
       const num = (v: unknown) => {
         const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
         return Number.isFinite(n) ? n : 0;
       };
-      const items: RecapBulkItem[] = [];
-      const map: Record<string, Partial<RecapInput>> = {};
-      for (const r of grid.slice(1)) {
+      const data = grid.slice(1);
+      const valid: RecapBulkItem[] = [];
+      const validMap: Record<string, Partial<RecapInput>> = {};
+      const validNames: string[] = [];
+      const unknown: string[] = [];
+      let noId = 0;
+      for (const r of data) {
         const id = (r[idIdx] ?? "").trim();
-        if (!id) continue;
+        if (!id) { noId++; continue; }
+        if (!nameById[id]) { unknown.push(id); continue; }
         const input: RecapComponentInput = {
-          days: 21,
-          tambahan: 0,
-          kompensasi: 0,
-          rapel: 0,
-          potKedukaan: 0,
-          potKoperasi: 0,
-          iph: 0,
-          tunjJabatan: 0,
-          tunjKehadiran: 0,
-          tunjEquipment: 0,
+          days: 21, tambahan: 0, kompensasi: 0, rapel: 0, potKedukaan: 0,
+          potKoperasi: 0, iph: 0, tunjJabatan: 0, tunjKehadiran: 0, tunjEquipment: 0,
         };
         COMP_FIELDS.forEach((f, i) => {
           const byName = header.indexOf(RAW_COLS[i]);
           const col = byName >= 0 ? byName : 3 + i;
           (input as Record<string, number>)[f.key] = num(r[col]);
         });
-        items.push({ employeeId: id, ...input });
-        map[id] = { ...input };
+        valid.push({ employeeId: id, ...input });
+        validMap[id] = { ...input };
+        validNames.push(nameById[id]);
       }
-      if (!items.length) { alert("Tidak ada baris valid (kolom id kosong?)."); return; }
-      const res = await saveRecapComponentsBulk(period, items);
-      if (!res.ok) { alert(res.error || "Gagal mengimpor."); return; }
-      onBulkSaved(map);
-      alert(`Impor berhasil: ${res.count} baris komponen untuk periode ${periodLabel}.`);
+      setPreview({ fileName: file.name, total: data.length, valid, validMap, validNames, unknown, noId });
     } catch (e) {
       alert(e instanceof Error ? e.message : "Gagal membaca file.");
     } finally {
-      setImporting(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  }
+
+  async function confirmImport() {
+    if (!preview || preview.valid.length === 0) return;
+    setImporting(true);
+    const res = await saveRecapComponentsBulk(period, preview.valid);
+    setImporting(false);
+    if (!res.ok) {
+      alert(res.error || "Gagal mengimpor.");
+      return;
+    }
+    onBulkSaved(preview.validMap);
+    setPreview(null);
+    alert(`Impor berhasil: ${res.count} baris komponen untuk periode ${periodLabel}.`);
   }
 
   return (
@@ -749,6 +774,77 @@ function RecapView({
             return null;
           }}
         />
+      )}
+
+      {preview && (
+        <Modal
+          open
+          onClose={() => setPreview(null)}
+          title="Pratinjau Impor"
+          subtitle={`${preview.fileName} · periode ${periodLabel}`}
+          footer={
+            <div className="flex justify-end gap-2">
+              <button className="btn-ghost" onClick={() => setPreview(null)} disabled={importing}>
+                Batal
+              </button>
+              <button
+                className="btn-primary disabled:opacity-60"
+                onClick={confirmImport}
+                disabled={importing || preview.valid.length === 0}
+              >
+                {importing ? "Mengimpor…" : `Impor ${preview.valid.length} Baris`}
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border border-border p-3 text-center">
+                <p className="text-2xl font-bold text-foreground">{preview.total}</p>
+                <p className="text-xs text-muted-foreground">Baris dibaca</p>
+              </div>
+              <div className="rounded-lg border border-emerald-300/60 bg-emerald-50 p-3 text-center dark:border-emerald-800/50 dark:bg-emerald-950/30">
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{preview.valid.length}</p>
+                <p className="text-xs text-muted-foreground">Akan diperbarui</p>
+              </div>
+              <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-center dark:border-amber-800/50 dark:bg-amber-950/30">
+                <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{preview.unknown.length + preview.noId}</p>
+                <p className="text-xs text-muted-foreground">Dilewati</p>
+              </div>
+            </div>
+
+            {preview.valid.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Komponen untuk <b className="text-foreground">{preview.valid.length} karyawan</b> akan ditimpa untuk periode{" "}
+                <b className="text-foreground">{periodLabel}</b>. Karyawan lain tidak berubah.
+              </p>
+            )}
+
+            {preview.noId > 0 && (
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                {preview.noId} baris dilewati karena kolom <code>id</code> kosong.
+              </p>
+            )}
+
+            {preview.unknown.length > 0 && (
+              <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:border-amber-800/50 dark:bg-amber-950/30">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                  {preview.unknown.length} id tidak dikenal (dilewati):
+                </p>
+                <p className="mt-1 break-words text-xs text-amber-700 dark:text-amber-400">
+                  {preview.unknown.slice(0, 25).join(", ")}
+                  {preview.unknown.length > 25 ? ` … +${preview.unknown.length - 25} lagi` : ""}
+                </p>
+              </div>
+            )}
+
+            {preview.valid.length === 0 && (
+              <p className="text-sm text-brand-red">
+                Tidak ada baris valid untuk diimpor. Pastikan kolom <code>id</code> berisi id karyawan (mis. arm-1226).
+              </p>
+            )}
+          </div>
+        </Modal>
       )}
     </Card>
   );
