@@ -4,8 +4,8 @@ import { createServerClient } from "@supabase/ssr";
 // Role terbatas hanya boleh mengakses halaman ini (termasuk sub-rute detail).
 // Harus SAMA dengan ROLE_PAGES di components/app-shell.tsx (visibilitas menu).
 const ROLE_PAGES: Record<string, string[]> = {
-  hr_pic: ["/dashboard", "/karyawan", "/absensi", "/proyek", "/chat"],
-  customer: ["/dashboard", "/absensi", "/karyawan", "/bpjs", "/payroll", "/chat"],
+  hr_pic: ["/dashboard", "/tutorial", "/karyawan", "/absensi", "/proyek", "/chat"],
+  customer: ["/dashboard", "/tutorial", "/absensi", "/karyawan", "/bpjs", "/payroll", "/chat"],
 };
 
 export async function middleware(req: NextRequest) {

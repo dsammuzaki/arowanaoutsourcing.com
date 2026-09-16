@@ -18,8 +18,8 @@ export type ShellUser = { email: string; name: string; role: string } | null;
 
 // Role terbatas: hanya boleh melihat halaman tertentu
 const ROLE_PAGES: Record<string, string[]> = {
-  hr_pic: ["/dashboard", "/karyawan", "/absensi", "/proyek", "/chat"],
-  customer: ["/dashboard", "/absensi", "/karyawan", "/bpjs", "/payroll", "/chat"],
+  hr_pic: ["/dashboard", "/tutorial", "/karyawan", "/absensi", "/proyek", "/chat"],
+  customer: ["/dashboard", "/tutorial", "/absensi", "/karyawan", "/bpjs", "/payroll", "/chat"],
 };
 import {
   LayoutDashboard,
@@ -40,6 +40,7 @@ import {
   ClipboardCheck,
   History,
   Building2,
+  BookOpen,
   LogOut,
   Menu,
   X,
@@ -54,7 +55,10 @@ type NavSection = { group: string; items: NavItem[] };
 const nav: NavSection[] = [
   {
     group: "Utama",
-    items: [{ href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard }],
+    items: [
+      { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+      { href: "/tutorial", label: "Panduan", Icon: BookOpen },
+    ],
   },
   {
     group: "Operasional",
