@@ -34,7 +34,9 @@ export type PayrollLineDTO = {
 // Data dasar per karyawan; komponen & perhitungan dilakukan di client.
 export type RecapBaseDTO = {
   id: string;
+  nik: string;
   name: string;
+  joinDate: string;
   clientId: string;
   clientName: string;
   position: string;
@@ -84,6 +86,45 @@ const RECAP_COLS: { key: keyof RecapNumbers; label: string; strong?: boolean }[]
   { key: "ppn", label: "PPN" },
   { key: "pph23", label: "PPh 23 2%" },
   { key: "grandTotal", label: "Grand Total", strong: true },
+];
+
+// Layout Template Import/Export (header persis file "TEMPLATE IMPORT EXPORT").
+// `input` menandai kolom yang bisa diedit/diimpor; `kw` = kata kunci pencocokan header.
+type TplCol = {
+  h: string;
+  meta?: "no" | "nik" | "name" | "joinDate" | "position";
+  key?: keyof RecapNumbers;
+  input?: keyof RecapInput;
+  kw?: string;
+};
+const TEMPLATE: TplCol[] = [
+  { h: "No", meta: "no" },
+  { h: "Nik", meta: "nik" },
+  { h: "Nama Karyawan", meta: "name" },
+  { h: "Tgl Masuk", meta: "joinDate" },
+  { h: "Jabatan", meta: "position" },
+  { h: "Bacis Salary 2026", key: "basicSalary" },
+  { h: "Hari kerja", key: "days", input: "days", kw: "hari kerja" },
+  { h: "Upah Masuk", key: "upahMasuk" },
+  { h: "Tambahan", key: "tambahan", input: "tambahan", kw: "tambahan" },
+  { h: "Kompensasi", key: "kompensasi", input: "kompensasi", kw: "kompensasi" },
+  { h: "Rapel Gaji", key: "rapel", input: "rapel", kw: "rapel" },
+  { h: "Potongan Iuran Kedukaan", key: "potKedukaan", input: "potKedukaan", kw: "kedukaan" },
+  { h: "Potongan Koperasi", key: "potKoperasi", input: "potKoperasi", kw: "koperasi" },
+  { h: "Izin Potong Upah (IPH)", key: "iph", input: "iph", kw: "iph" },
+  { h: "Tunjangan Jabatan", key: "tunjJabatan", input: "tunjJabatan", kw: "tunjangan jabatan" },
+  { h: "Tunjangan Kehadiran", key: "tunjKehadiran", input: "tunjKehadiran", kw: "kehadiran" },
+  { h: "Salary This Month", key: "salaryThisMonth" },
+  { h: "BPJS Ketenagakerjaan (4.24%)", key: "bpjsTK" },
+  { h: "Jaminan Pensiun (2%)", key: "jp" },
+  { h: "BPJS Keesehatan (4%)", key: "bpjsKes" },
+  { h: "Tunj. Equipment", key: "tunjEquipment", input: "tunjEquipment", kw: "equipment" },
+  { h: "SUB TOTAL", key: "subTotal" },
+  { h: "Management fee (7%)", key: "mgmtFee" },
+  { h: "TOTAL 1", key: "total1" },
+  { h: "PPN 12%", key: "ppn" },
+  { h: "PPH 23 (2%)", key: "pph23" },
+  { h: "Grand Total", key: "grandTotal" },
 ];
 
 const MONTHS = [
@@ -481,7 +522,10 @@ function RecapView({
   const [importing, setImporting] = useState(false);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const nameById = useMemo(() => Object.fromEntries(allBase.map((b) => [b.id, b.name])), [allBase]);
+  const nikToId = useMemo(
+    () => Object.fromEntries(allBase.filter((b) => b.nik).map((b) => [String(b.nik).trim(), b])),
+    [allBase]
+  );
 
   const rows: RecapRow[] = base.map((b) => ({
     id: b.id,
@@ -501,49 +545,8 @@ function RecapView({
     return acc;
   }, {} as Record<string, number>);
 
-  function exportRecapCsv() {
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const head = ["Nama", "Jabatan", "Klien", "Hari", ...RECAP_COLS.map((c) => c.label)];
-    const body = rows.map((r) =>
-      [r.name, r.position, r.clientName, r.days, ...RECAP_COLS.map((c) => r[c.key])].map(esc).join(",")
-    );
-    const foot = ["TOTAL", "", "", "", ...RECAP_COLS.map((c) => totals[c.key as string] ?? 0)].map(esc).join(",");
-    const blob = new Blob(["﻿" + [head.map(esc).join(","), ...body, foot].join("\n")], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `rekap-pendapatan-${period}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
   const money = (n: number) => (n === 0 ? "–" : rupiah(n));
   const editRow = base.find((b) => b.id === editId) ?? null;
-
-  // ---- Import / Export data mentah (komponen) ----
-  const RAW_COLS = [
-    "hari_kerja",
-    "tambahan",
-    "kompensasi",
-    "rapel",
-    "pot_kedukaan",
-    "pot_koperasi",
-    "iph_pot_perusahaan",
-    "tunj_jabatan",
-    "tunj_kehadiran",
-    "tunj_equipment",
-  ]; // urutannya sama dengan COMP_FIELDS
-
-  const compOf = (id: string): Record<string, number> => {
-    const c = components[id] ?? {};
-    const o: Record<string, number> = {};
-    for (const f of COMP_FIELDS) o[f.key] = Number(c[f.key] ?? (f.key === "days" ? 21 : 0));
-    return o;
-  };
 
   function download(name: string, csv: string) {
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
@@ -557,14 +560,31 @@ function RecapView({
     URL.revokeObjectURL(url);
   }
 
-  function exportRawCsv() {
+  // Export satu tabel sesuai TEMPLATE (identitas + komponen + hasil hitung).
+  function exportTemplate() {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const head = ["id", "nama", "jabatan", ...RAW_COLS];
-    const body = base.map((b) => {
-      const cc = compOf(b.id);
-      return [b.id, b.name, b.position, ...COMP_FIELDS.map((f) => cc[f.key])].map(esc).join(",");
+    const head = TEMPLATE.map((t) => t.h);
+    const body = rows.map((r, idx) => {
+      const b = base[idx];
+      return TEMPLATE.map((t) => {
+        if (t.meta === "no") return idx + 1;
+        if (t.meta === "nik") return b.nik;
+        if (t.meta === "name") return b.name;
+        if (t.meta === "joinDate") return b.joinDate;
+        if (t.meta === "position") return b.position;
+        return t.key ? (r[t.key] as number) : "";
+      })
+        .map(esc)
+        .join(",");
     });
-    download(`komponen-rekap-${period}.csv`, [head.map(esc).join(","), ...body].join("\n"));
+    const foot = TEMPLATE.map((t) => {
+      if (t.meta === "nik") return "TOTAL";
+      if (t.meta) return "";
+      return t.key ? rows.reduce((s, rr) => s + (rr[t.key!] as number), 0) : "";
+    })
+      .map(esc)
+      .join(",");
+    download(`rekap-pendapatan-${period}.csv`, [head.map(esc).join(","), ...body, foot].join("\n"));
   }
 
   function parseCsv(text: string): string[][] {
@@ -589,7 +609,7 @@ function RecapView({
     return out;
   }
 
-  // Parse + validasi → tampilkan pratinjau (belum menyimpan).
+  // Parse + validasi (cocokkan NIK) → tampilkan pratinjau (belum menyimpan).
   async function handleImportFile(file: File) {
     try {
       const text = (await file.text()).replace(/^﻿/, "");
@@ -599,7 +619,18 @@ function RecapView({
         return;
       }
       const header = grid[0].map((h) => h.trim().toLowerCase());
-      const idIdx = header.indexOf("id") >= 0 ? header.indexOf("id") : 0;
+      const nikIdx = header.findIndex((h) => h.includes("nik"));
+      if (nikIdx < 0) {
+        alert('Kolom "Nik" tidak ditemukan di file. Gunakan format Template (tombol Export).');
+        return;
+      }
+      // index kolom input dari kata kunci header
+      const inputIdx: { field: keyof RecapInput; idx: number }[] = [];
+      for (const t of TEMPLATE) {
+        if (!t.input || !t.kw) continue;
+        const idx = header.findIndex((h) => h.includes(t.kw!));
+        if (idx >= 0) inputIdx.push({ field: t.input, idx });
+      }
       const num = (v: unknown) => {
         const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
         return Number.isFinite(n) ? n : 0;
@@ -611,21 +642,19 @@ function RecapView({
       const unknown: string[] = [];
       let noId = 0;
       for (const r of data) {
-        const id = (r[idIdx] ?? "").trim();
-        if (!id) { noId++; continue; }
-        if (!nameById[id]) { unknown.push(id); continue; }
+        const nik = (r[nikIdx] ?? "").trim();
+        const first = (r[0] ?? "").trim().toUpperCase();
+        if (!nik || first === "TOTAL") { if (!nik && first !== "TOTAL") noId++; continue; }
+        const emp = nikToId[nik];
+        if (!emp) { unknown.push(nik); continue; }
         const input: RecapComponentInput = {
           days: 21, tambahan: 0, kompensasi: 0, rapel: 0, potKedukaan: 0,
           potKoperasi: 0, iph: 0, tunjJabatan: 0, tunjKehadiran: 0, tunjEquipment: 0,
         };
-        COMP_FIELDS.forEach((f, i) => {
-          const byName = header.indexOf(RAW_COLS[i]);
-          const col = byName >= 0 ? byName : 3 + i;
-          (input as Record<string, number>)[f.key] = num(r[col]);
-        });
-        valid.push({ employeeId: id, ...input });
-        validMap[id] = { ...input };
-        validNames.push(nameById[id]);
+        for (const { field, idx } of inputIdx) (input as Record<string, number>)[field] = num(r[idx]);
+        valid.push({ employeeId: emp.id, ...input });
+        validMap[emp.id] = { ...input };
+        validNames.push(emp.name);
       }
       setPreview({ fileName: file.name, total: data.length, valid, validMap, validNames, unknown, noId });
     } catch (e) {
@@ -672,16 +701,16 @@ function RecapView({
           <button
             className="btn-outline whitespace-nowrap"
             onClick={() => fileRef.current?.click()}
-            disabled={importing}
-            title="Impor komponen dari CSV (format sama dengan Ekspor Mentah)"
+            title="Impor dari file format Template (dicocokkan berdasarkan NIK)"
           >
-            <Upload size={16} /> {importing ? "Mengimpor…" : "Import"}
+            <Upload size={16} /> Import
           </button>
-          <button className="btn-outline whitespace-nowrap" onClick={exportRawCsv} title="Ekspor data mentah (komponen) untuk diedit di Excel lalu diimpor kembali">
-            <Download size={16} /> Data Mentah
-          </button>
-          <button className="btn-outline whitespace-nowrap" onClick={exportRecapCsv}>
-            <Download size={16} /> Rekap (.csv)
+          <button
+            className="btn-outline whitespace-nowrap"
+            onClick={exportTemplate}
+            title="Ekspor satu tabel format Template — edit di Excel lalu Import kembali"
+          >
+            <Download size={16} /> Export (Excel)
           </button>
           <button className="btn-outline whitespace-nowrap" onClick={() => printElementById("doc-recap")}>
             <IconPrint width={16} height={16} /> Cetak / PDF
@@ -822,14 +851,14 @@ function RecapView({
 
             {preview.noId > 0 && (
               <p className="text-sm text-amber-700 dark:text-amber-400">
-                {preview.noId} baris dilewati karena kolom <code>id</code> kosong.
+                {preview.noId} baris dilewati karena kolom <code>Nik</code> kosong.
               </p>
             )}
 
             {preview.unknown.length > 0 && (
               <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:border-amber-800/50 dark:bg-amber-950/30">
                 <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                  {preview.unknown.length} id tidak dikenal (dilewati):
+                  {preview.unknown.length} NIK tidak dikenal (dilewati):
                 </p>
                 <p className="mt-1 break-words text-xs text-amber-700 dark:text-amber-400">
                   {preview.unknown.slice(0, 25).join(", ")}
@@ -840,7 +869,7 @@ function RecapView({
 
             {preview.valid.length === 0 && (
               <p className="text-sm text-brand-red">
-                Tidak ada baris valid untuk diimpor. Pastikan kolom <code>id</code> berisi id karyawan (mis. arm-1226).
+                Tidak ada baris valid untuk diimpor. Pastikan kolom <code>Nik</code> berisi NIK karyawan yang terdaftar.
               </p>
             )}
           </div>

@@ -45,7 +45,9 @@ export default async function PayrollPage() {
     const client = clients.find((c) => c.id === e.clientId);
     return {
       id: e.id,
+      nik: e.nik,
       name: e.name,
+      joinDate: e.joinDate,
       clientId: e.clientId,
       clientName: client?.name ?? "-",
       position: e.position,

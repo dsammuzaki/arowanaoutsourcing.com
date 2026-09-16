@@ -50,12 +50,12 @@
 html {
   -webkit-font-smoothing: antialiased;
   /* Skala UI global: mengecilkan seluruh ukuran berbasis rem (teks + spacing).
-     16px default → 15px; layar lebar sedikit lebih kecil lagi. */
-  font-size: 15px;
+     16px default → 12px; layar lebar sedikit lebih kecil lagi. */
+  font-size: 12px;
 }
 @media (min-width: 1280px) {
   html {
-    font-size: 14.5px;
+    font-size: 11.5px;
   }
 }
 body {
