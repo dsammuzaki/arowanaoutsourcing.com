@@ -203,6 +203,11 @@ body {
   :root {
     --background: #ffffff;
   }
+  /* Skala cetak tetap (independen dari pengecilan UI layar) agar dokumen
+     tercetak sesuai desain aslinya di kertas A4, bukan ikut mengecil. */
+  html {
+    font-size: 14px !important;
+  }
   html,
   body {
     background: #ffffff !important;
