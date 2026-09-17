@@ -29,6 +29,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Modal } from "./modal";
+import { useToast } from "./toast";
 import {
   canManageTasks,
   type KanbanColumn,
@@ -64,6 +65,7 @@ export function KanbanBoard({
   members?: Member[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
   const [view, setView] = useState<"tabel" | "papan" | "harian">("tabel");
   const [filters, setFilters] = useState<Filter[]>([]);
@@ -140,7 +142,12 @@ export function KanbanBoard({
     updateTask(id, { column }); // optimistic
     if (persist) {
       const res = await moveTaskAction(id, column);
-      if (!res.ok && prev) updateTask(id, { column: prev });
+      if (!res.ok) {
+        if (prev) updateTask(id, { column: prev });
+        toast.error("Gagal memindahkan task", res.error);
+      } else {
+        toast.success("Status task diperbarui");
+      }
     }
   }
 
@@ -461,9 +468,10 @@ export function KanbanBoard({
               });
               if (res.ok) {
                 setCreating(false);
+                toast.success("Task berhasil ditambahkan");
                 router.refresh();
               } else {
-                alert(res.error || "Gagal menyimpan task.");
+                toast.error("Gagal menyimpan task", res.error);
               }
             } else {
               setTasks((ts) => [{ ...t, id: `t-${Date.now()}` }, ...ts]);
@@ -486,12 +494,13 @@ function ReviewControls({
   persist: boolean;
   onDone: (status: ApprovalStatus, note: string) => void;
 }) {
+  const toast = useToast();
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function decide(decision: "disetujui" | "ditolak") {
     if (decision === "ditolak" && !note.trim()) {
-      alert("Beri catatan alasan penolakan agar staf bisa memperbaiki.");
+      toast.error("Catatan wajib diisi", "Beri alasan penolakan agar staf bisa memperbaiki.");
       return;
     }
     setBusy(true);
@@ -499,12 +508,13 @@ function ReviewControls({
       const res = await reviewTask(taskId, decision, note);
       setBusy(false);
       if (!res.ok) {
-        alert(res.error || "Gagal menyimpan tinjauan.");
+        toast.error("Gagal menyimpan tinjauan", res.error);
         return;
       }
     } else {
       setBusy(false);
     }
+    toast.success(decision === "disetujui" ? "Task disetujui" : "Task ditolak");
     onDone(decision, note.trim());
   }
 
@@ -548,6 +558,7 @@ function SubmitResultForm({
   initialNote: string;
   onDone: (note: string, url?: string) => void;
 }) {
+  const toast = useToast();
   const [note, setNote] = useState(initialNote);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -575,9 +586,12 @@ function SubmitResultForm({
         const res = await submitResult(taskId, note, url);
         if (!res.ok) throw new Error(res.error || "Gagal mengirim hasil.");
       }
+      toast.success("Hasil terkirim untuk ditinjau");
       onDone(note.trim(), url);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal mengirim hasil.");
+      const msg = e instanceof Error ? e.message : "Gagal mengirim hasil.";
+      setErr(msg);
+      toast.error("Gagal mengirim hasil", msg);
     } finally {
       setBusy(false);
     }

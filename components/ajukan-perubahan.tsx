@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PencilLine } from "lucide-react";
 import { Modal } from "@/components/modal";
+import { useToast } from "@/components/toast";
 import { requestChange } from "@/app/(app)/persetujuan/actions";
 
 export type EmpEditable = {
@@ -29,6 +30,7 @@ const FIELDS: { key: string; label: string; get: (e: EmpEditable) => string }[] 
 
 export function AjukanPerubahanButton({ emp }: { emp: EmpEditable }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -56,8 +58,12 @@ export function AjukanPerubahanButton({ emp }: { emp: EmpEditable }) {
     setBusy(false);
     if (res.ok) {
       setDone(true);
+      toast.success("Permintaan perubahan terkirim", "Menunggu persetujuan manajemen");
       router.refresh();
-    } else setErr(res.error || "Gagal mengajukan.");
+    } else {
+      setErr(res.error || "Gagal mengajukan.");
+      toast.error("Gagal mengajukan", res.error);
+    }
   }
 
   return (

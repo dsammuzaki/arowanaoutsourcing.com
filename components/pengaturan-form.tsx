@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { IconCheck } from "@/components/icons";
 import type { PayrollConfig } from "@/lib/data";
 import { rupiah } from "@/lib/format";
@@ -10,6 +11,7 @@ import { saveSettings } from "@/app/(app)/pengaturan/actions";
 
 export function PengaturanForm({ config }: { config: PayrollConfig }) {
   const router = useRouter();
+  const toast = useToast();
   const [ptkp, setPtkp] = useState<Record<string, number>>({ ...config.ptkpTable });
   const [brackets, setBrackets] = useState(config.pph21Brackets.map((b) => ({ ...b })));
   const [rates, setRates] = useState({ ...config.bpjsRates });
@@ -27,8 +29,12 @@ export function PengaturanForm({ config }: { config: PayrollConfig }) {
     setBusy(false);
     if (res.ok) {
       setMsg({ ok: true, text: "Tersimpan. Perhitungan payroll akan memakai tarif ini." });
+      toast.success("Pengaturan tersimpan");
       router.refresh();
-    } else setMsg({ ok: false, text: res.error || "Gagal menyimpan." });
+    } else {
+      setMsg({ ok: false, text: res.error || "Gagal menyimpan." });
+      toast.error("Gagal menyimpan", res.error);
+    }
   }
 
   const empField = (label: string, key: keyof typeof rates) => (

@@ -4,6 +4,7 @@ import { useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { Modal } from "@/components/modal";
+import { useToast } from "@/components/toast";
 import { IconWallet, IconCheck, IconPrint } from "@/components/icons";
 import { CalendarDays, Users, Building2, Download, Pencil, Upload } from "lucide-react";
 import { rupiah } from "@/lib/format";
@@ -518,6 +519,7 @@ function RecapView({
   onSaved: (empId: string, input: Partial<RecapInput>) => void;
   onBulkSaved: (map: Record<string, Partial<RecapInput>>) => void;
 }) {
+  const toast = useToast();
   const [editId, setEditId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -618,13 +620,13 @@ function RecapView({
         .map((r) => r.map((c) => String(c ?? "")))
         .filter((r) => r.some((x) => x.trim() !== ""));
       if (grid.length < 2) {
-        alert("File tidak berisi data.");
+        toast.error("File tidak berisi data");
         return;
       }
       const header = grid[0].map((h) => h.trim().toLowerCase());
       const nikIdx = header.findIndex((h) => h.includes("nik"));
       if (nikIdx < 0) {
-        alert('Kolom "Nik" tidak ditemukan di file. Gunakan format Template (tombol Export).');
+        toast.error("Kolom \"Nik\" tidak ditemukan", "Gunakan format Template (tombol Export).");
         return;
       }
       // index kolom input dari kata kunci header
@@ -661,7 +663,7 @@ function RecapView({
       }
       setPreview({ fileName: file.name, total: data.length, valid, validMap, validNames, unknown, noId });
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Gagal membaca file.");
+      toast.error("Gagal membaca file", e instanceof Error ? e.message : undefined);
     } finally {
       if (fileRef.current) fileRef.current.value = "";
     }
@@ -673,12 +675,12 @@ function RecapView({
     const res = await saveRecapComponentsBulk(period, preview.valid);
     setImporting(false);
     if (!res.ok) {
-      alert(res.error || "Gagal mengimpor.");
+      toast.error("Gagal mengimpor", res.error);
       return;
     }
     onBulkSaved(preview.validMap);
     setPreview(null);
-    alert(`Impor berhasil: ${res.count} baris komponen untuk periode ${periodLabel}.`);
+    toast.success("Impor berhasil", `${res.count} baris komponen · periode ${periodLabel}`);
   }
 
   return (
@@ -800,9 +802,13 @@ function RecapView({
           onClose={() => setEditId(null)}
           onSave={async (input) => {
             const res = await saveRecapComponent(editRow.id, period, input as RecapInput);
-            if (!res.ok) return res.error || "Gagal menyimpan.";
+            if (!res.ok) {
+              toast.error("Gagal menyimpan", res.error);
+              return res.error || "Gagal menyimpan.";
+            }
             onSaved(editRow.id, input);
             setEditId(null);
+            toast.success("Komponen rekap tersimpan", editRow.name);
             return null;
           }}
         />

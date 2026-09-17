@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Plus } from "lucide-react";
 import { Modal } from "./modal";
+import { useToast } from "./toast";
 import { createEmployee } from "@/app/(app)/karyawan/actions";
 
 type ClientOpt = { id: string; name: string };
@@ -22,6 +23,7 @@ export type ExportRow = {
 
 export function KaryawanToolbar({ clients, exportRows }: { clients: ClientOpt[]; exportRows: ExportRow[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -51,9 +53,11 @@ export function KaryawanToolbar({ clients, exportRows }: { clients: ClientOpt[];
     setLoading(false);
     if (res.ok) {
       setOpen(false);
+      toast.success("Karyawan berhasil ditambahkan");
       router.refresh();
     } else {
       setErr(res.error || "Gagal menyimpan.");
+      toast.error("Gagal menyimpan", res.error);
     }
   }
 

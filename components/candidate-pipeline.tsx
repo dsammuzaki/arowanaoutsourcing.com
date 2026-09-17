@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Badge, Avatar } from "@/components/ui";
 import { Modal } from "@/components/modal";
+import { useToast } from "@/components/toast";
 import { createCandidate, moveCandidate } from "@/app/(app)/rekrutmen/actions";
 
 export type Cand = {
@@ -36,6 +37,7 @@ export function CandidatePipeline({
   persist?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [cands, setCands] = useState<Cand[]>(initial);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<string | null>(null);
@@ -50,7 +52,12 @@ export function CandidatePipeline({
     setCands((cs) => cs.map((c) => (c.id === id ? { ...c, stage } : c))); // optimistic
     if (persist) {
       moveCandidate(id, stage).then((res) => {
-        if (!res.ok && prev) setCands((cs) => cs.map((c) => (c.id === id ? { ...c, stage: prev } : c)));
+        if (!res.ok) {
+          if (prev) setCands((cs) => cs.map((c) => (c.id === id ? { ...c, stage: prev } : c)));
+          toast.error("Gagal memindahkan kandidat", res.error);
+        } else {
+          toast.success("Kandidat dipindahkan", stage);
+        }
       });
     }
   }
@@ -65,9 +72,13 @@ export function CandidatePipeline({
       setBusy(true);
       const res = await createCandidate({ name: form.name.trim(), position: form.position, source: form.source, stage: form.stage });
       setBusy(false);
-      if (!res.ok) return alert(res.error || "Gagal menyimpan kandidat.");
+      if (!res.ok) {
+        toast.error("Gagal menyimpan kandidat", res.error);
+        return;
+      }
       setForm({ ...form, name: "" });
       setCreating(false);
+      toast.success("Kandidat berhasil ditambahkan");
       router.refresh();
       return;
     }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Check, X } from "lucide-react";
 import { Modal } from "./modal";
 import { StatusPill, Badge, Avatar } from "./ui";
+import { useToast } from "./toast";
 import { createLeave, updateLeaveStatus } from "@/app/(app)/cuti/actions";
 import { tanggal } from "@/lib/format";
 
@@ -20,6 +21,7 @@ const typeTone: Record<string, string> = {
 
 export function AjukanCutiButton({ employees }: { employees: EmpOpt[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -32,8 +34,12 @@ export function AjukanCutiButton({ employees }: { employees: EmpOpt[] }) {
     setLoading(false);
     if (res.ok) {
       setOpen(false);
+      toast.success("Pengajuan cuti terkirim");
       router.refresh();
-    } else setErr(res.error || "Gagal mengajukan.");
+    } else {
+      setErr(res.error || "Gagal mengajukan.");
+      toast.error("Gagal mengajukan", res.error);
+    }
   }
 
   return (
@@ -114,14 +120,17 @@ export type LeaveRow = {
 
 export function LeaveTable({ rows }: { rows: LeaveRow[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
 
   async function act(id: string, status: "disetujui" | "ditolak") {
     setBusy(id);
     const res = await updateLeaveStatus(id, status);
     setBusy(null);
-    if (res.ok) router.refresh();
-    else alert(res.error || "Gagal.");
+    if (res.ok) {
+      toast.success(status === "disetujui" ? "Cuti disetujui" : "Cuti ditolak");
+      router.refresh();
+    } else toast.error("Gagal memproses", res.error);
   }
 
   return (

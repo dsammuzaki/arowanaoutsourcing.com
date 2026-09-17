@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Search, ArrowLeft, MessageSquare } from "lucide-react";
 import { Card, Avatar } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { createClient } from "@/utils/supabase/client";
 import { sendMessage, markRead } from "@/app/(app)/chat/actions";
 
@@ -31,6 +32,7 @@ export function ChatClient({
   members: Member[];
   compact?: boolean;
 }) {
+  const toast = useToast();
   const [active, setActive] = useState<Member | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [text, setText] = useState("");
@@ -100,7 +102,8 @@ export function ChatClient({
     setSending(false);
     if (!res.ok) {
       setMessages((ms) => ms.filter((m) => m.id !== temp.id));
-      alert(res.error || "Gagal mengirim.");
+      setText(body);
+      toast.error("Gagal mengirim pesan", res.error);
       return;
     }
     setMessages((ms) => ms.map((m) => (m.id === temp.id ? { ...m, id: res.id ?? m.id, created_at: res.createdAt ?? m.created_at } : m)));

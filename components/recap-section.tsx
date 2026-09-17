@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { CalendarRange, Loader2, Download, Printer } from "lucide-react";
 import { getMonthlyRecap, type RecapResult, type RecapCell } from "@/app/(app)/absensi/actions";
 import { printElementById } from "@/lib/print";
@@ -16,6 +17,7 @@ const cellMeta: Record<Exclude<RecapCell, "">, { label: string; cls: string }> =
 const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 export function RecapSection({ initialYear, initialMonth }: { initialYear: number; initialMonth: number }) {
+  const toast = useToast();
   const [year, setYear] = useState(initialYear);
   const [month, setMonth] = useState(initialMonth); // 1-12
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,10 @@ export function RecapSection({ initialYear, initialMonth }: { initialYear: numbe
   ];
 
   function exportCsv() {
-    if (!data?.rows.length) return;
+    if (!data?.rows.length) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const header = ["Nama", "Posisi", ...dayList.map((d) => String(d)), "Hadir", "Izin", "Sakit", "Cuti"];
     const body = data.rows.map((r) => {
@@ -62,6 +67,7 @@ export function RecapSection({ initialYear, initialMonth }: { initialYear: numbe
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+    toast.success("Rekap absensi diekspor", `${MONTHS[month - 1]} ${year}`);
   }
 
   return (

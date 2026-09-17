@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, Trash2, X, ShieldCheck, Pencil, KeyRound, Eye, EyeOff, RefreshCw, Copy } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { Modal } from "@/components/modal";
+import { useToast } from "@/components/toast";
 import { Mail } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { createAccount, updateRole, deleteAccount, updateAccount, resetPassword } from "@/app/(app)/akun/actions";
@@ -46,6 +47,7 @@ export type ClientOpt = { id: string; name: string };
 
 export function TambahAkunButton() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -60,9 +62,11 @@ export function TambahAkunButton() {
     if (res.ok) {
       setOpen(false);
       setForm({ fullName: "", email: "", password: "", role: "operation" });
+      toast.success("Akun berhasil ditambahkan");
       router.refresh();
     } else {
       setErr(res.error || "Gagal membuat akun.");
+      toast.error("Gagal membuat akun", res.error);
     }
   }
 
@@ -148,6 +152,7 @@ export function TambahAkunButton() {
 
 export function AccountsTable({ rows, meId, clients = [] }: { rows: AccountRow[]; meId: string; clients?: ClientOpt[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [busyId, setBusyId] = useState("");
   const [editRow, setEditRow] = useState<AccountRow | null>(null);
   const [pwRow, setPwRow] = useState<AccountRow | null>(null);
@@ -156,8 +161,11 @@ export function AccountsTable({ rows, meId, clients = [] }: { rows: AccountRow[]
     setBusyId(id);
     const res = await updateRole(id, role);
     setBusyId("");
-    if (!res.ok) alert(res.error || "Gagal mengubah role.");
-    else router.refresh();
+    if (!res.ok) toast.error("Gagal mengubah role", res.error);
+    else {
+      toast.success("Role berhasil diperbarui");
+      router.refresh();
+    }
   }
 
   async function onDelete(id: string, name: string) {
@@ -165,8 +173,11 @@ export function AccountsTable({ rows, meId, clients = [] }: { rows: AccountRow[]
     setBusyId(id);
     const res = await deleteAccount(id);
     setBusyId("");
-    if (!res.ok) alert(res.error || "Gagal menghapus akun.");
-    else router.refresh();
+    if (!res.ok) toast.error("Gagal menghapus akun", res.error);
+    else {
+      toast.success("Akun berhasil dihapus", name);
+      router.refresh();
+    }
   }
 
   return (
@@ -271,6 +282,7 @@ function EditAccountModal({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const toast = useToast();
   const [fullName, setFullName] = useState(row.fullName);
   const [role, setRole] = useState(row.role);
   const [clientId, setClientId] = useState(row.clientId ?? "");
@@ -286,8 +298,13 @@ function EditAccountModal({
     setErr("");
     const res = await updateAccount(row.id, { fullName, role, clientId });
     setBusy(false);
-    if (res.ok) onDone();
-    else setErr(res.error || "Gagal menyimpan.");
+    if (res.ok) {
+      toast.success("Perubahan akun tersimpan");
+      onDone();
+    } else {
+      setErr(res.error || "Gagal menyimpan.");
+      toast.error("Gagal menyimpan", res.error);
+    }
   }
 
   return (
@@ -341,6 +358,7 @@ function EditAccountModal({
 }
 
 function ResetPasswordModal({ row, onClose }: { row: AccountRow; onClose: () => void }) {
+  const toast = useToast();
   const [pw, setPw] = useState("");
   const [show, setShow] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -359,10 +377,16 @@ function ResetPasswordModal({ row, onClose }: { row: AccountRow; onClose: () => 
       const { error } = await supabase.auth.resetPasswordForEmail(row.email, {
         redirectTo: `${base}/reset-password`,
       });
-      if (error) setErr(error.message);
-      else setEmailSent(true);
+      if (error) {
+        setErr(error.message);
+        toast.error("Gagal mengirim email", error.message);
+      } else {
+        setEmailSent(true);
+        toast.success("Tautan reset terkirim", row.email);
+      }
     } catch {
       setErr("Gagal mengirim email.");
+      toast.error("Gagal mengirim email");
     }
     setEmailing(false);
   }
@@ -376,8 +400,13 @@ function ResetPasswordModal({ row, onClose }: { row: AccountRow; onClose: () => 
     setErr("");
     const res = await resetPassword(row.id, pw);
     setBusy(false);
-    if (res.ok) setDone(true);
-    else setErr(res.error || "Gagal reset password.");
+    if (res.ok) {
+      setDone(true);
+      toast.success("Password berhasil diperbarui");
+    } else {
+      setErr(res.error || "Gagal reset password.");
+      toast.error("Gagal reset password", res.error);
+    }
   }
 
   return (

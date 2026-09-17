@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui";
 import { Modal } from "@/components/modal";
+import { useToast } from "@/components/toast";
 import {
   Clock3,
   MapPin,
@@ -159,6 +160,7 @@ const statusMeta: Record<string, { label: string; cls: string; ok: boolean }> = 
 
 export function LiveAttendance({ employees, sites = [] }: { employees: Emp[]; sites?: Site[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [now, setNow] = useState<Date | null>(null);
   const [empId, setEmpId] = useState(employees[0]?.id ?? "");
   const [kind, setKind] = useState<"masuk" | "pulang">("masuk");
@@ -325,6 +327,7 @@ export function LiveAttendance({ employees, sites = [] }: { employees: Emp[]; si
 
     if (!res.ok) {
       setError(res.error || "Gagal menyimpan absensi.");
+      toast.error("Gagal menyimpan absensi", res.error);
       setPhase("kamera");
       openCamera();
       return;
@@ -338,6 +341,7 @@ export function LiveAttendance({ employees, sites = [] }: { employees: Emp[]; si
       photo: selfie,
     });
     setCamOpen(false);
+    toast.success(`Absen ${kind === "masuk" ? "masuk" : "pulang"} berhasil dicatat`, emp?.name);
     router.refresh();
   }
 

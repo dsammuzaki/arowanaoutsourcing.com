@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Clock } from "lucide-react";
 import { Card, Badge } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { reviewChange } from "@/app/(app)/persetujuan/actions";
 
 export type ChangeRow = {
@@ -49,6 +50,7 @@ function fmt(iso: string) {
 
 export function PersetujuanList({ rows, canReview }: { rows: ChangeRow[]; canReview: boolean }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
 
   async function act(id: string, action: "disetujui" | "ditolak") {
@@ -56,8 +58,11 @@ export function PersetujuanList({ rows, canReview }: { rows: ChangeRow[]; canRev
     setBusy(id);
     const res = await reviewChange(id, action);
     setBusy(null);
-    if (!res.ok) alert(res.error || "Gagal memproses.");
-    else router.refresh();
+    if (!res.ok) toast.error("Gagal memproses", res.error);
+    else {
+      toast.success(action === "disetujui" ? "Permintaan disetujui" : "Permintaan ditolak");
+      router.refresh();
+    }
   }
 
   if (rows.length === 0)

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FilePlus2 } from "lucide-react";
 import { Modal } from "@/components/modal";
+import { useToast } from "@/components/toast";
 import { saveContract } from "@/app/(app)/kontrak/actions";
 
 const TYPES = [
@@ -21,6 +22,7 @@ export function AturKontrakButton({
   defaultType?: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -39,8 +41,12 @@ export function AturKontrakButton({
     setBusy(false);
     if (res.ok) {
       setOpen(false);
+      toast.success("Kontrak berhasil disimpan");
       router.refresh();
-    } else setErr(res.error || "Gagal menyimpan kontrak.");
+    } else {
+      setErr(res.error || "Gagal menyimpan kontrak.");
+      toast.error("Gagal menyimpan kontrak", res.error);
+    }
   }
 
   return (

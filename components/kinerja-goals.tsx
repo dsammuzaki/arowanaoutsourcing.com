@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Target } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { Modal } from "@/components/modal";
+import { useToast } from "@/components/toast";
 import { tanggal } from "@/lib/format";
 import { createGoal, updateGoalProgress } from "@/app/(app)/kinerja/actions";
 
@@ -29,6 +30,7 @@ function barColor(v: number) {
 
 export function KinerjaGoals({ goals: initial, employees, persist = false }: { goals: GoalDTO[]; employees: string[]; persist?: boolean }) {
   const router = useRouter();
+  const toast = useToast();
   const [goals, setGoals] = useState<GoalDTO[]>(initial);
   const [creating, setCreating] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -47,10 +49,14 @@ export function KinerjaGoals({ goals: initial, employees, persist = false }: { g
       setBusy(true);
       const res = await createGoal({ title: title.trim(), employeeName: emp, due, progress });
       setBusy(false);
-      if (!res.ok) return alert(res.error || "Gagal menyimpan goal.");
+      if (!res.ok) {
+        toast.error("Gagal menyimpan goal", res.error);
+        return;
+      }
       setTitle("");
       setProgress(0);
       setCreating(false);
+      toast.success("Goal berhasil ditambahkan");
       router.refresh();
       return;
     }
@@ -68,8 +74,11 @@ export function KinerjaGoals({ goals: initial, employees, persist = false }: { g
     setGoalProgress(id, val);
     if (persist) {
       const res = await updateGoalProgress(id, val);
-      if (!res.ok) alert(res.error || "Gagal menyimpan progres.");
-      else router.refresh();
+      if (!res.ok) toast.error("Gagal menyimpan progres", res.error);
+      else {
+        toast.success("Progres tersimpan", `${val}%`);
+        router.refresh();
+      }
     }
   }
 

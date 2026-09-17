@@ -4,13 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Modal } from "./modal";
+import { useToast } from "./toast";
 import { createJobPosting } from "@/app/(app)/rekrutmen/actions";
 import { createInvoice } from "@/app/(app)/invoice/actions";
 
 type ClientOpt = { id: string; name: string };
 
-function useSubmit(action: (fd: FormData) => Promise<{ ok: boolean; error?: string }>) {
+function useSubmit(
+  action: (fd: FormData) => Promise<{ ok: boolean; error?: string }>,
+  successMsg = "Berhasil ditambahkan"
+) {
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [open, setOpen] = useState(false);
@@ -18,12 +23,22 @@ function useSubmit(action: (fd: FormData) => Promise<{ ok: boolean; error?: stri
     e.preventDefault();
     setLoading(true);
     setErr("");
-    const res = await action(new FormData(e.currentTarget));
-    setLoading(false);
-    if (res.ok) {
-      setOpen(false);
-      router.refresh();
-    } else setErr(res.error || "Gagal menyimpan.");
+    try {
+      const res = await action(new FormData(e.currentTarget));
+      if (res.ok) {
+        setOpen(false);
+        toast.success(successMsg);
+        router.refresh();
+      } else {
+        setErr(res.error || "Gagal menyimpan.");
+        toast.error("Gagal menyimpan", res.error);
+      }
+    } catch {
+      setErr("Terjadi kesalahan. Coba lagi.");
+      toast.error("Terjadi kesalahan", "Coba lagi.");
+    } finally {
+      setLoading(false);
+    }
   }
   return { open, setOpen, loading, err, onSubmit };
 }
@@ -34,7 +49,7 @@ function ErrLine({ err }: { err: string }) {
 }
 
 export function BuatLowonganButton({ clients }: { clients: ClientOpt[] }) {
-  const s = useSubmit(createJobPosting);
+  const s = useSubmit(createJobPosting, "Lowongan berhasil ditambahkan");
   return (
     <>
       <button className="btn-primary" onClick={() => s.setOpen(true)}>
@@ -101,7 +116,7 @@ export function BuatLowonganButton({ clients }: { clients: ClientOpt[] }) {
 }
 
 export function BuatInvoiceButton({ clients }: { clients: ClientOpt[] }) {
-  const s = useSubmit(createInvoice);
+  const s = useSubmit(createInvoice, "Invoice berhasil ditambahkan");
   return (
     <>
       <button className="btn-primary" onClick={() => s.setOpen(true)}>

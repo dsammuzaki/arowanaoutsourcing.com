@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Camera, ExternalLink, Trash2, ShieldCheck } from "lucide-react";
 import { Card, Badge } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { deleteAttendance } from "@/app/(app)/absensi/actions";
 
 export type LogRow = {
@@ -40,6 +41,7 @@ function fmtWaktu(iso: string) {
 
 export function AttendanceLog({ rows, canDelete }: { rows: LogRow[]; canDelete: boolean }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
 
   async function onDelete(r: LogRow) {
@@ -47,8 +49,11 @@ export function AttendanceLog({ rows, canDelete }: { rows: LogRow[]; canDelete: 
     setBusy(r.id);
     const res = await deleteAttendance(r.id);
     setBusy(null);
-    if (!res.ok) alert(res.error || "Gagal menghapus.");
-    else router.refresh();
+    if (!res.ok) toast.error("Gagal menghapus", res.error);
+    else {
+      toast.success("Data absensi dihapus");
+      router.refresh();
+    }
   }
 
   return (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "./modal";
+import { useToast } from "./toast";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { createCustomer, updateCustomer, deleteCustomer, type CustomerInput } from "@/app/(app)/pelanggan/actions";
 
@@ -61,6 +62,7 @@ export function TambahPelangganButton({ entities }: { entities: EntityOpt[] }) {
 
 export function CustomerTable({ rows, entities }: { rows: CustomerRow[]; entities: EntityOpt[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [editRow, setEditRow] = useState<CustomerRow | null>(null);
   const [busyId, setBusyId] = useState("");
   const entityName = (id: string) => entities.find((e) => e.id === id)?.name ?? "—";
@@ -70,8 +72,11 @@ export function CustomerTable({ rows, entities }: { rows: CustomerRow[]; entitie
     setBusyId(r.id);
     const res = await deleteCustomer(r.id, r.name);
     setBusyId("");
-    if (!res.ok) alert(res.error || "Gagal menghapus.");
-    else router.refresh();
+    if (!res.ok) toast.error("Gagal menghapus", res.error);
+    else {
+      toast.success("Pelanggan berhasil dihapus", r.name);
+      router.refresh();
+    }
   }
 
   if (rows.length === 0) {
@@ -153,6 +158,7 @@ function CustomerModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [form, setForm] = useState<CustomerInput>(
     row
       ? {
@@ -184,9 +190,11 @@ function CustomerModal({
     setBusy(false);
     if (!res.ok) {
       setErr(res.error || "Gagal menyimpan.");
+      toast.error("Gagal menyimpan", res.error);
       return;
     }
     onClose();
+    toast.success(row ? "Perubahan tersimpan" : "Pelanggan berhasil ditambahkan", form.name);
     router.refresh();
   }
 
