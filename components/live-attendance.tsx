@@ -350,10 +350,10 @@ export function LiveAttendance({ employees, sites = [] }: { employees: Emp[]; si
   const busy = !!busyMsg && phase !== "kamera";
 
   return (
-    <Card className="mb-5 overflow-hidden">
+    <Card className="mb-5 overflow-hidden rounded-2xl border-2 border-border shadow-lg ring-1 ring-black/5 dark:ring-white/10">
       <div className="grid gap-0 md:grid-cols-[1.1fr_1fr]">
         {/* Jam realtime */}
-        <div className="relative flex flex-col justify-center gap-1 bg-navy p-6 text-white">
+        <div className="relative flex flex-col justify-center gap-1 border-b-2 border-teal/40 bg-navy p-6 text-white md:border-b-0 md:border-r-2">
           <span className="hero-anim pointer-events-none absolute inset-0 opacity-30" />
           <div className="relative">
             <div className="mb-1 flex items-center gap-2 text-teal-soft">
@@ -385,7 +385,7 @@ export function LiveAttendance({ employees, sites = [] }: { employees: Emp[]; si
             </div>
             <div>
               <label className="label">Jenis</label>
-              <div className="inline-flex w-full rounded-lg border border-border p-0.5">
+              <div className="inline-flex w-full rounded-lg border-2 border-border p-0.5">
                 <button
                   onClick={() => setKind("masuk")}
                   className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium ${
@@ -406,7 +406,11 @@ export function LiveAttendance({ employees, sites = [] }: { employees: Emp[]; si
             </div>
           </div>
 
-          <button className="btn-primary justify-center" onClick={openCamera} disabled={!empId}>
+          <button
+            className="btn-primary justify-center border border-teal/30 py-3 text-[15px] shadow-md shadow-teal/20 ring-1 ring-white/10 transition-transform hover:-translate-y-0.5 disabled:hover:translate-y-0"
+            onClick={openCamera}
+            disabled={!empId}
+          >
             <Camera size={16} /> Absen {kind === "masuk" ? "Masuk" : "Pulang"} (Selfie + GPS)
           </button>
 
